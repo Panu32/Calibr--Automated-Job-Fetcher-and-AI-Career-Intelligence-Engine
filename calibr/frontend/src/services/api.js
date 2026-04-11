@@ -224,13 +224,60 @@ export const getJobsFiltered = async (userId, filters = {}) => {
 // ──────────────────────────────────────────────────────────────────────────
 
 /**
- * Send a chat message to Calibr AI and receive a response.
+ * Send a chat message to Calibr AI and receive a real-time STREAM of response chunks.
  *
- * @param {string} userId  - The user's identifier
- * @param {string} message - The user's message text
- * @returns {Promise<Object>} { response, timestamp, user_id }
+ * This version uses the native fetch API (not Axios) because fetch supports
+ * ReadableStream by default, allowing us to process tokens one-by-one.
+ *
+ * @param {string} userId   - The user's identifier
+ * @param {string} message  - The user's message text
+ * @param {Function} onChunk - Callback fired for every chunk (token) received
  */
-export const sendChatMessage = async (userId, message) => {
+export const sendChatMessageStream = async (userId, message, onChunk) => {
+  const token = localStorage.getItem("calibr_token");
+  const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1";
+
+  const response = await fetch(`${baseUrl}/chat/message`, {
+    method: "POST",
+    headers: {
+      "Content-Type" : "application/json",
+      "Authorization": token ? `Bearer ${token}` : "",
+    },
+    body: JSON.stringify({ user_id: userId, message }),
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Failed to initiate stream");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const text = decoder.decode(value, { stream: true });
+    buffer += text;
+
+    // SSE events are separated by double newlines
+    const lines = buffer.split("\n\n");
+    // Keep the last partial event in the buffer
+    buffer = lines.pop();
+
+    for (const line of lines) {
+      if (line.startsWith("data: ")) {
+        const chunk = line.replace("data: ", "");
+        if (onChunk) onChunk(chunk);
+      }
+    }
+  }
+};
+
+/**
+ * Send a chat message to Calibr AI and receive a response.
   const response = await api.post("/chat/message", {
     user_id: userId,
     message,
@@ -257,6 +304,28 @@ export const getChatHistory = async (userId) => {
  */
 export const clearChatHistory = async (userId) => {
   const response = await api.delete(`/chat/history/${userId}`);
+  return response.data;
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+//  NEWS / MARKET INTEL endpoints
+// ──────────────────────────────────────────────────────────────────────────
+
+/**
+ * Manually trigger a tech news / market intelligence sync.
+ * @returns {Promise<Object>} { status, message }
+ */
+export const refreshMarketIntel = async () => {
+  const response = await api.post("/news/refresh");
+  return response.data;
+};
+
+/**
+ * Get the current status and document count of the news database.
+ * @returns {Promise<Object>} { collection, document_count, status }
+ */
+export const getMarketIntelStatus = async () => {
+  const response = await api.get("/news/status");
   return response.data;
 };
 

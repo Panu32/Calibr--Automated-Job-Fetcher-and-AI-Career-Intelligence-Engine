@@ -54,6 +54,72 @@ def build_chat_chain():
     return chain
 
 
+async def chat_with_resume_stream(
+    user_id    : str,
+    question   : str,
+    resume_text: str,
+):
+    """
+    Async generator that streams status updates and the final AI response.
+    Yields chunks like: "THINKING: Searching news...", then chunks of actual text.
+    """
+    try:
+        # ── Step 1: Thinking / Context Retrieval ───────────────────────────
+        yield "data: THINKING: Consulting your resume and market data...\n\n"
+        
+        # Load history (async wrapper around sync MongoDB call)
+        import asyncio
+        loop = asyncio.get_event_loop()
+        history_docs = await loop.run_in_executor(None, get_chat_history, user_id, 10)
+
+        # Format history
+        if history_docs:
+            history_lines = []
+            for msg in history_docs:
+                role_label = "User" if msg["role"] == "user" else "Assistant"
+                history_lines.append(f"{role_label}: {msg['content']}")
+            chat_history_str = "\n".join(history_lines)
+        else:
+            chat_history_str = "No previous messages."
+
+        # Get RAG context (async wrapper)
+        rag_context = await loop.run_in_executor(None, get_rag_context, user_id, question)
+
+        if "Quota Reached" in rag_context or "Resource Exhausted" in rag_context:
+             yield f"data: ERROR: {rag_context}\n\n"
+             return
+
+        yield "data: THINKING: Synthesizing career intelligence...\n\n"
+
+        # ── Step 2: Build and Stream AI Response ───────────────────────────
+        chain = build_chat_chain()
+        full_response_parts = []
+        
+        # Use astream for real-time token delivery
+        # We wrap chunks in SSE format: data: <chunk>\n\n
+        async for chunk in chain.astream({
+            "resume_text" : resume_text[:5000],
+            "chat_history": chat_history_str,
+            "question"    : question,
+            "rag_context" : rag_context,
+        }):
+            if chunk:
+                full_response_parts.append(chunk)
+                # Escape newlines in chunk for SSE if necessary, though most LLM chunks are fine
+                yield f"data: {chunk}\n\n"
+
+        # ── Step 3: Persistence ───────────────────────────────────────────
+        # Save the full exchange to MongoDB once the stream is complete
+        full_response = "".join(full_response_parts)
+        if full_response.strip():
+            await loop.run_in_executor(None, save_chat_message, user_id, "user", question)
+            await loop.run_in_executor(None, save_chat_message, user_id, "assistant", full_response)
+
+    except Exception as e:
+        logger.error(f"chat_with_resume_stream failed: {e}")
+        yield "ERROR: I encountered an issue while streaming the response. Please try again."
+
+
 def chat_with_resume(
     user_id    : str,
     question   : str,
@@ -129,6 +195,11 @@ def chat_with_resume(
 
 
 def get_rag_context(user_id: str, question: str) -> str:
+    """
+    Retrieve semantic context for a user question from multiple vector collections:
+      1. jobs      - Personalised career matches
+      2. tech_news - Market intelligence, tech trends, and coding news
+    """
     try:
         # ── Step 1: Embed query ────────────────────────────────────────────
         start_step = time.perf_counter()
@@ -143,44 +214,54 @@ def get_rag_context(user_id: str, question: str) -> str:
             
         logger.info(f"PERF: embedding_model.embed_query took {time.perf_counter() - start_step:.2f}s")
 
-        # ── Step 2: Query ChromaDB ──────────────────────────────────────────
-        start_step = time.perf_counter()
+        context_parts = []
+
+        # ── Step 2: Query Jobs Collection ──────────────────────────────────
         jobs_collection = get_or_create_collection("jobs")
-        total_jobs = jobs_collection.count()
-        if total_jobs == 0:
+        if jobs_collection.count() > 0:
+            job_results = jobs_collection.query(
+                query_embeddings=[question_vector],
+                n_results=3,
+                include=["documents", "metadatas", "distances"],
+            )
+            
+            job_docs = job_results.get("documents", [[]])[0]
+            job_dists = job_results.get("distances", [[]])[0]
+            
+            relevant_jobs = [doc for doc, dist in zip(job_docs, job_dists) if dist < 0.8]
+            if relevant_jobs:
+                jobs_str = "\n".join([f"  - {doc[:300]}..." for doc in relevant_jobs])
+                context_parts.append(f"━━━━━━━━ Relevant Job Context ━━━━━━━━\n{jobs_str}")
+
+        # ── Step 3: Query Tech News Collection (Market Intelligence) ────────
+        news_collection = get_or_create_collection("tech_news")
+        if news_collection.count() > 0:
+            news_results = news_collection.query(
+                query_embeddings=[question_vector],
+                n_results=4, # Give standard news a bit more weight for trends
+                include=["documents", "metadatas", "distances"],
+            )
+            
+            news_docs = news_results.get("documents", [[]])[0]
+            news_metas = news_results.get("metadatas", [[]])[0]
+            news_dists = news_results.get("distances", [[]])[0]
+            
+            relevant_news = [
+                (doc, meta) for doc, meta, dist in zip(news_docs, news_metas, news_dists) if dist < 0.85
+            ]
+            if relevant_news:
+                lines = [f"  - [{m.get('source', 'Web')}] {d[:300]}..." for d, m in relevant_news]
+                news_str = "\n".join(lines)
+                context_parts.append(f"━━━━━━━━ Market Intelligence & Trends ━━━━━━━━\n{news_str}")
+
+        if not context_parts:
             return ""
 
-        results = jobs_collection.query(
-            query_embeddings=[question_vector],
-            n_results=min(3, total_jobs),
-            include=["documents", "metadatas", "distances"],
-        )
-        logger.info(f"PERF: chroma.query took {time.perf_counter() - start_step:.2f}s")
+        return "\n\n".join(context_parts) + "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
 
-        docs      = results.get("documents", [[]])[0]
-        metadatas = results.get("metadatas", [[]])[0]
-        distances = results.get("distances", [[]])[0]
-
-        if not docs:
-            return ""
-
-        relevant_docs = [
-            (doc, meta)
-            for doc, meta, dist in zip(docs, metadatas, distances)
-            if dist < 0.8
-        ]
-
-        if not relevant_docs:
-            return ""
-
-        context_lines = ["Relevant job listings from your personalised feed:\n"]
-        for i, (doc, meta) in enumerate(relevant_docs, start=1):
-            snippet = doc[:300].strip()
-            if len(doc) > 300:
-                snippet += "…"
-            context_lines.append(f"  {i}. {snippet}")
-
-        return "\n━━━━━━━━ Relevant Job Context ━━━━━━━━\n" + "\n".join(context_lines) + "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+    except Exception as e:
+        logger.warning(f"get_rag_context failed: {e}")
+        return ""
 
     except Exception as e:
         logger.warning(f"get_rag_context failed: {e}")

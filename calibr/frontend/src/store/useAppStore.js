@@ -91,6 +91,33 @@ export const useAppStore = create((set, get) => ({
   setChatHistory: (history) =>
     set({ chatHistory: history }),
 
+  updateLastChatMessage: (content) =>
+    set((state) => {
+      const history = [...state.chatHistory];
+      if (history.length > 0) {
+        history[history.length - 1] = { 
+          ...history[history.length - 1], 
+          content,
+          timestamp: new Date().toISOString()
+        };
+      }
+      return { chatHistory: history };
+    }),
+
+  appendLastChatMessage: (chunk) =>
+    set((state) => {
+      const history = [...state.chatHistory];
+      if (history.length > 0) {
+        const lastIndex = history.length - 1;
+        history[lastIndex] = {
+          ...history[lastIndex],
+          content: (history[lastIndex].content || "") + chunk,
+          timestamp: new Date().toISOString()
+        };
+      }
+      return { chatHistory: history };
+    }),
+
   setLoading: (bool) =>
     set({ isLoading: bool }),
 

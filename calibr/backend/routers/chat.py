@@ -73,116 +73,53 @@ class ChatHistoryResponse(BaseModel):
 #  Main chat endpoint — the user sends a message, Calibr AI responds
 # ─────────────────────────────────────────────────────────────────────────────
 
+from fastapi.responses import StreamingResponse
+from services.rag_chain import chat_with_resume_stream
+
 @router.post(
     "/message",
     status_code=status.HTTP_200_OK,
-    response_model=ChatMessageResponse,
-    summary="Send a message to Calibr AI career coach",
+    summary="Send a message to Calibr AI (Streaming)",
     description=(
-        "Accepts a user message and returns a personalised AI response. "
-        "The AI has access to the user's resume and recent chat history. "
-        "Uses RAG to inject relevant job data when asking job-related questions. "
-        "Requires the user to have uploaded a resume first."
+        "Streams a personalised AI response. "
+        "The AI has access to the user's resume and market context."
     ),
 )
 async def send_chat_message(body: ChatMessageRequest):
     """
-    Process a user message through the full RAG chat pipeline.
-
-    Pipeline (all handled inside chat_with_resume()):
-        1. Load the last 10 messages from MongoDB for conversation context.
-        2. Embed the user's question with Gemini text-embedding-004.
-        3. Retrieve top-3 semantically relevant job snippets from ChromaDB.
-        4. Inject resume + history + RAG context into CHAT_PROMPT.
-        5. Call Gemini (gemini-flash-latest) via the LCEL chain.
-        6. Save both the user message and assistant response to MongoDB.
-        7. Return the response string.
-
-    Pre-check:
-        Before invoking the expensive LLM pipeline, we verify the user has an
-        uploaded resume. Without a resume, the AI's "personalised" answers
-        would be meaningless — and we can give a much clearer error message
-        than Gemini would.
-
-    Raises:
-        400: Message content is empty.
-        404: No resume uploaded yet (with a helpful instruction message).
-        500: LLM or pipeline failure.
+    Process a user message and return a StreamingResponse.
+    Yields 'THINKING: ...' updates then the raw AI text.
     """
-    logger.info(
-        f"POST /chat/message — user='{body.user_id}', "
-        f"message='{body.message[:60]}{'…' if len(body.message) > 60 else ''}'"
-    )
+    logger.info(f"POST /chat/message (Stream) — user='{body.user_id}'")
 
-    # ── Guard: reject empty messages ───────────────────────────────────────
     if not body.message or not body.message.strip():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Message cannot be empty.",
         )
 
-    # ── Guard: ensure user has uploaded a resume ───────────────────────────
-    # We check BEFORE calling the LLM so we give a fast, clear error.
-    # Without a resume, the CHAT_PROMPT would have empty {resume_text}
-    # and responses would be generic and useless.
     resume_doc = get_resume(body.user_id)
-
     if not resume_doc:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=(
-                "Please upload your resume first so I can give you personalised answers. "
-                "Go to the Resume tab and upload your PDF or DOCX file — "
-                "it only takes a moment!"
-            ),
+            detail="Please upload your resume first so I can give you personalised answers.",
         )
 
     resume_text = resume_doc.get("raw_text", "")
-
-    if not resume_text:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail=(
-                "Your resume appears to have been uploaded but contains no readable text. "
-                "Please re-upload your resume."
-            ),
-        )
-
-    # ── Invoke the RAG chat pipeline ───────────────────────────────────────
-    try:
-        start_time = time.perf_counter()
-        response = chat_with_resume(
+    
+    # We return a StreamingResponse that iterates over the rag_chain generator
+    return StreamingResponse(
+        chat_with_resume_stream(
             user_id     = body.user_id,
             question    = body.message.strip(),
             resume_text = resume_text,
-        )
-        duration = time.perf_counter() - start_time
-        logger.info(f"chat_with_resume completed in {duration:.2f}s for user '{body.user_id}'")
-    except Exception as e:
-        logger.error(f"chat_with_resume raised for user '{body.user_id}': {e}")
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=(
-                "The AI is temporarily unavailable. "
-                "Please try again in a moment."
-            ),
-        )
-
-    # Guard: if the response came back empty (shouldn't happen but just in case)
-    if not response or not response.strip():
-        response = "I'm sorry, I couldn't generate a response. Please try rephrasing your question."
-
-    timestamp = datetime.utcnow()
-
-    logger.info(
-        f"POST /chat/message — response {len(response)} chars "
-        f"for user '{body.user_id}'"
-    )
-
-    return ChatMessageResponse(
-        response  = response,
-        timestamp = timestamp,
-        user_id   = body.user_id,
+        ),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no", # For Nginx compatibility if present
+        }
     )
 
 

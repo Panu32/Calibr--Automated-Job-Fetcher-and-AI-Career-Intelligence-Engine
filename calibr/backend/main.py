@@ -33,7 +33,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 # ── Internal: routers ─────────────────────────────────────────────────────────
 # Each router handles a specific feature domain of the API.
-from routers import resume, jobs, analysis, chat, auth
+from routers import resume, jobs, analysis, chat, auth, news
 
 # ── Internal: database initialisation ─────────────────────────────────────────
 from db.mongodb import connect_to_mongo, close_mongo_connection
@@ -61,22 +61,6 @@ logging.basicConfig(
 logger = logging.getLogger("calibr")                 # our named logger
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Step 3 – Create the APScheduler instance
-#  AsyncIOScheduler integrates with FastAPI's asyncio event loop,
-#  so we can await async functions from scheduled jobs.
-# ─────────────────────────────────────────────────────────────────────────────
-scheduler = AsyncIOScheduler()
-
-
-# ─────────────────────────────────────────────────────────────────────────────
-#  Step 4 – Lifespan context manager (startup + shutdown)
-#  FastAPI recommends using @asynccontextmanager instead of the older
-#  @app.on_event("startup") / @app.on_event("shutdown") decorators.
-#
-#  Code BEFORE `yield`  → runs on startup
-#  Code AFTER  `yield`  → runs on shutdown
-# ─────────────────────────────────────────────────────────────────────────────
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -84,43 +68,60 @@ async def lifespan(app: FastAPI):
       - Startup:  open MongoDB connection, register + start scheduler
       - Shutdown: stop scheduler, close MongoDB connection
     """
-
     # ── STARTUP ──────────────────────────────────────────────────────────────
-
     logger.info("🚀 Calibr backend starting up…")
 
     # 4a. Connect to MongoDB Atlas
-    #     connect_to_mongo() stores the client in a module-level variable
-    #     so all routers and services can import and use it without reconnecting.
     logger.info("Connecting to MongoDB Atlas…")
     await connect_to_mongo()
     logger.info("✅ MongoDB connected.")
 
-    # 4b. Register the daily job-fetch cron (DISABLED to save Gemini Quota)
-    # scheduler.add_job(
-    #     func=fetch_and_store_jobs,
-    #     trigger=CronTrigger(hour=7, minute=0),
-    #     id="daily_job_fetch",
-    #     name="Daily Job Fetch",
-    #     replace_existing=True,
-    # )
+    # 4b. Initialize and start the scheduler inside the lifespan to ensure
+    #     it binds to the correct running event loop.
+    from apscheduler.schedulers.asyncio import AsyncIOScheduler
+    from apscheduler.triggers.cron import CronTrigger
+    from services.job_fetcher import fetch_and_store_jobs
+    from services.news_service import sync_market_intelligence
+    
+    # We store the scheduler on the app state so routers can access it if needed
+    app.state.scheduler = AsyncIOScheduler()
+    
+    # Register daily job-fetch (07:00 AM)
+    app.state.scheduler.add_job(
+        func=fetch_and_store_jobs,
+        trigger=CronTrigger(hour=7, minute=0),
+        id="daily_job_fetch",
+        replace_existing=True,
+    )
 
-    # 4c. Start the scheduler (DISABLED)
-    # scheduler.start()
-    # logger.info("⏰  Daily job-fetch cron scheduled for 07:00 every day.")
+    # Register Market Intel sync (Every 6 hours)
+    app.state.scheduler.add_job(
+        func=sync_market_intelligence,
+        trigger="interval",
+        hours=6,
+        id="market_intel_sync",
+        replace_existing=True,
+    )
 
-    # ── Hand control to FastAPI (serve requests) ──────────────────────────────
+    app.state.scheduler.start()
+    logger.info("⏰  Scheduler started: Daily Job Fetch & Market Intel.")
+
+    # 4c. Initial Market Intel sync (runs in background thread)
+    import threading
+    threading.Thread(target=sync_market_intelligence, daemon=True).start()
+
+    # ── Hand control to FastAPI ──────────────────────────────────────────────
     yield
 
     # ── SHUTDOWN ─────────────────────────────────────────────────────────────
-
     logger.info("🛑 Calibr backend shutting down…")
 
-    # 4d. Stop all scheduled jobs gracefully (wait=False for fast exit)
-    scheduler.shutdown(wait=False)
-    logger.info("⏹  Scheduler stopped.")
+    # Stop scheduler
+    if hasattr(app.state, "scheduler"):
+        app.state.scheduler.shutdown(wait=False)
+        logger.info("⏹  Scheduler stopped.")
 
-    # 4e. Close the MongoDB connection so the driver flushes its connection pool
+    # Close MongoDB
     await close_mongo_connection()
     logger.info("🔌  MongoDB connection closed.")
 
@@ -158,49 +159,17 @@ app.add_middleware(
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-#  Step 7 – Register API Routers
-#  Each router is a separate module that owns a slice of the API.
-#  All routes are prefixed with /api/v1 for versioning.
-#
-#  Resulting route groups:
-#    /api/v1/auth/*    – authentication and user management
-#    /api/v1/resume/*  – upload, parse, and embed resumes
-#    /api/v1/jobs/*    – browse, search, and score job listings
-#    /api/v1/analysis/*– skill-gap analysis between resume and job description
-#    /api/v1/chat/*    – RAG-powered career advisor chat
-# ─────────────────────────────────────────────────────────────────────────────
+# ── Step 7 – Register API Routers
+# Each router handles a specific feature domain of the API.
+# All routes are prefixed with /api/v1 for versioning.
 API_PREFIX = "/api/v1"
 
-app.include_router(
-    auth.router,
-    prefix=f"{API_PREFIX}/auth",
-    tags=["Auth"],
-)
-
-app.include_router(
-    resume.router,
-    prefix=f"{API_PREFIX}/resume",
-    tags=["Resume"],            # groups these endpoints in /docs
-)
-
-app.include_router(
-    jobs.router,
-    prefix=f"{API_PREFIX}/jobs",
-    tags=["Jobs"],
-)
-
-app.include_router(
-    analysis.router,
-    prefix=f"{API_PREFIX}/analysis",
-    tags=["Analysis"],
-)
-
-app.include_router(
-    chat.router,
-    prefix=f"{API_PREFIX}/chat",
-    tags=["Chat"],
-)
+app.include_router(auth.router, prefix=f"{API_PREFIX}/auth", tags=["Auth"])
+app.include_router(resume.router, prefix=f"{API_PREFIX}/resume", tags=["Resume"])
+app.include_router(jobs.router, prefix=f"{API_PREFIX}/jobs", tags=["Jobs"])
+app.include_router(analysis.router, prefix=f"{API_PREFIX}/analysis", tags=["Analysis"])
+app.include_router(chat.router, prefix=f"{API_PREFIX}/chat", tags=["Chat"])
+app.include_router(news.router, prefix=f"{API_PREFIX}/news", tags=["Market Intel"])
 
 
 # ─────────────────────────────────────────────────────────────────────────────
