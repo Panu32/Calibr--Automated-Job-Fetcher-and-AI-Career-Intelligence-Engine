@@ -26,8 +26,8 @@ const api = axios.create({
   // Use Vite env variable if set, otherwise fall back to local dev URL
   baseURL: import.meta.env.VITE_API_URL || "http://localhost:8000/api/v1",
 
-  // 60 second timeout — job fetch and LLM calls can be slow
-  timeout: 60000,
+  // 120 second timeout — local Ollama embedding and LLM calls can be slow
+  timeout: 120000,
 
   headers: {
     "Content-Type": "application/json",

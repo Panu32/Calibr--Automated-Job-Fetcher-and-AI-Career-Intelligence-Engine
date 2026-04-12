@@ -1,13 +1,13 @@
 /*
  * src/index.css
  * ─────────────────────────────────────────────────────────────────────────
- * Calibr – Global Styles (Cyber-Luxury Edition)
+ * Calibr – Global Design System (Executive Intelligence Edition)
  * 
  * DESIGN PHILOSOPHY:
- * 1. Ultra-deep backgrounds for maximum contrast.
- * 2. Vibrant, glowing accents in Violet and Cyan.
- * 3. Sophisticated glassmorphism with inner-glow borders.
- * 4. Bold, premium typography with Jakarta Sans.
+ * 1. Claude-Level Sophistication: Clean lines, purposeful whitespace.
+ * 2. HSL-First Architecture: Dynamic transparency and luminosity control.
+ * 3. Layered Glassmorphism: Refined depth with multi-step shadows.
+ * 4. Human-Centric Typography: Optimized for readability and authority.
  * ─────────────────────────────────────────────────────────────────────────
  */
 
@@ -18,54 +18,60 @@
 
 /* ── Design tokens as CSS custom properties ───────────────────────────── */
 :root {
-  /* Brand colours (Deep Indigo Palette for a "Classy" SaaS look) */
-  --color-brand-primary   : #6366f1;   /* Indigo 500 */
-  --color-brand-secondary : #4f46e5;   /* Indigo 600 */
-  --color-brand-accent    : #38bdf8;   /* Sky 400 */
+  /* 
+   * Brand: "Intelligence Indigo"
+   * A refined, less saturated indigo that feels professional and tech-forward.
+   */
+  --brand-h: 235;
+  --brand-s: 75%;
+  --brand-l: 65%;
   
-  /* Surface colours (Deep Slate for a premium grounded feel) */
+  --color-brand-primary   : hsl(var(--brand-h), var(--brand-s), var(--brand-l));
+  --color-brand-muted     : hsl(var(--brand-h), var(--brand-s), 25%);
+  --color-brand-accent    : #38bdf8;
+  
+  /* 
+   * Surface: "Executive Slate"
+   * Deep, neutral slates that provide a luxury foundation.
+   */
   --color-surface-base    : #020617;   /* Slate 950 */
-  --color-surface-raised  : #0f172a;   /* Slate 900 */
-  --color-surface-overlay : #1e293b;   /* Slate 800 */
+  --color-surface-raised  : #0a0f1e;   /* Custom dark */
+  --color-surface-overlay : #111827;   /* Slate 900 */
+  --color-border-subtle   : rgba(255, 255, 255, 0.04);
+  --color-border-glow     : rgba(99, 102, 241, 0.15);
 
-  /* Text colours */
-  --color-text-primary    : #f8fafc;   /* Slate 50  */
-  --color-text-secondary  : #94a3b8;   /* Slate 400 */
-  --color-text-muted      : #64748b;   /* Slate 500 */
-
-  /* Font families */
-  --font-body      : "Inter", system-ui, sans-serif;
+  /* Typography */
+  --font-body      : "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-heading   : "Plus Jakarta Sans", "Inter", sans-serif;
 
-  /* Border radius (Sophisticated, slightly rounded) */
-  --radius-sm : 6px;
+  /* Spacing & Radius */
+  --radius-sm : 8px;
   --radius-md : 12px;
-  --radius-lg : 16px;
-  --radius-xl : 24px;
+  --radius-lg : 20px;
+  --radius-xl : 32px;
 }
 
 /* ── Base element styles ──────────────────────────────────────────────── */
 @layer base {
   html, body, #root {
-    @apply h-full;
+    @apply h-full overflow-hidden;
     background-color: var(--color-surface-base);
-    color           : var(--color-text-primary);
+    color           : #f1f5f9; /* Slate 100 */
     font-family     : var(--font-body);
     -webkit-font-smoothing : antialiased;
-    letter-spacing: -0.011em;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tighter;
+    @apply font-bold tracking-tight;
     font-family: var(--font-heading);
     color: #ffffff;
+    line-height: 1.1;
   }
 
-  h1 { @apply text-4xl lg:text-5xl mb-6; }
-  h2 { @apply text-2xl lg:text-3xl mb-4; }
-
   ::selection {
-    background: rgba(99, 102, 241, 0.25);
+    background: hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.2);
     color: #fff;
   }
 }
@@ -73,98 +79,126 @@
 /* ── Reusable component utilities ─────────────────────────────────────── */
 @layer components {
 
-  /* Refined Premium Glass */
+  /* Modern Executive Glass */
   .glass-card {
-    background: rgba(15, 23, 42, 0.4);
-    backdrop-filter: blur(20px) saturate(160%);
-    -webkit-backdrop-filter: blur(20px) saturate(160%);
-    border: 1px solid rgba(255, 255, 255, 0.05);
+    background: rgba(10, 15, 30, 0.4);
+    backdrop-filter: blur(12px) saturate(180%);
+    border: 1px solid var(--color-border-subtle);
     box-shadow: 
-      0 10px 15px -3px rgba(0, 0, 0, 0.3),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.03);
+      0 4px 6px -1px rgba(0, 0, 0, 0.1),
+      0 2px 4px -1px rgba(0, 0, 0, 0.06),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.02);
     border-radius: var(--radius-lg);
-    transition: all 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .glass-card:hover {
-    background: rgba(15, 23, 42, 0.5);
-    border-color: rgba(99, 102, 241, 0.2);
+    background: rgba(15, 22, 42, 0.5);
+    border-color: rgba(99, 102, 241, 0.12);
     box-shadow: 
-      0 20px 25px -5px rgba(0, 0, 0, 0.4),
-      0 0 0 1px rgba(99, 102, 241, 0.1);
+      0 20px 25px -5px rgba(0, 0, 0, 0.2),
+      0 0 0 1px rgba(99, 102, 241, 0.05);
+    transform: translateY(-2px);
   }
 
-  /* Sophisticated Solid/Gradient Button */
+  /* Precision Button System */
   .btn-primary {
-    @apply px-6 py-2.5 rounded-xl font-bold text-sm text-white
-           transition-all duration-300 active:scale-95 flex items-center justify-center gap-2;
-    background: linear-gradient(180deg, #6366f1 0%, #4f46e5 100%);
+    @apply px-6 py-3 rounded-xl font-bold text-sm text-white
+           transition-all duration-300 active:scale-[0.97] flex items-center justify-center gap-2.5;
+    background: linear-gradient(180deg, hsl(var(--brand-h), var(--brand-s), 55%) 0%, hsl(var(--brand-h), var(--brand-s), 45%) 100%);
     border: 1px solid rgba(255, 255, 255, 0.1);
     box-shadow: 
-      0 4px 12px -2px rgba(79, 70, 229, 0.3),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.15);
+      0 1px 2px rgba(0, 0, 0, 0.1),
+      0 4px 12px -2px hsla(var(--brand-h), var(--brand-s), 40%, 0.3),
+      inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
   }
   
   .btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 20px -4px rgba(79, 70, 229, 0.4);
-    filter: brightness(1.05);
+    filter: brightness(1.1);
+    box-shadow: 
+      0 8px 20px -4px hsla(var(--brand-h), var(--brand-s), 40%, 0.4);
   }
 
   .btn-ghost {
-    @apply px-5 py-2.5 rounded-xl font-semibold text-sm
-           bg-white/[0.03] border border-white/[0.05] text-slate-400
-           hover:bg-white/[0.08] hover:text-white hover:border-white/[0.1]
-           transition-all duration-300 active:scale-95;
+    @apply px-5 py-3 rounded-xl font-semibold text-sm
+           bg-white/[0.02] border border-white/[0.04] text-slate-400
+           hover:bg-white/[0.06] hover:text-white hover:border-white/[0.1]
+           transition-all duration-300 active:scale-[0.97];
   }
 
-  /* Clean Navigation */
+  /* Interactive Navigation */
   .nav-item {
-    @apply flex items-center gap-4 px-4 py-3 rounded-xl
+    @apply flex items-center gap-3.5 px-4 py-3 rounded-xl
            text-slate-500 text-sm font-semibold
            cursor-pointer transition-all duration-300
-           hover:bg-white/[0.03] hover:text-slate-200;
+           hover:bg-white/[0.02] hover:text-slate-200;
   }
   
   .nav-item.active {
-    @apply text-white bg-indigo-500/10;
-    box-shadow: inset 0 0 0 1px rgba(99, 102, 241, 0.15);
+    @apply text-white;
+    background: hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.08);
+    box-shadow: inset 0 0 0 1px hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.1);
   }
 
   .input-field {
     @apply w-full px-5 py-3.5 rounded-xl text-sm
-           bg-slate-900/40 backdrop-blur-md
+           bg-slate-900/40 backdrop-blur-sm
            border border-white/5 text-white
-           placeholder-slate-500
-           focus:outline-none focus:border-indigo-500/40 focus:ring-4 focus:ring-indigo-500/5
-           transition-all duration-300;
+           placeholder-slate-600
+           focus:outline-none focus:border-indigo-500/30 focus:ring-4 focus:ring-indigo-500/5
+           transition-all duration-500;
   }
 
   .skill-tag {
-    @apply px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider
-           bg-slate-800/40 text-indigo-300 border border-indigo-500/10;
+    @apply px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider
+           bg-indigo-500/5 text-indigo-300 border border-indigo-500/10;
   }
 }
 
-/* ── Custom scrollbar ────────────────────────────────────────── */
-::-webkit-scrollbar        { width: 6px; height: 6px; }
+/* ── Premium Scrollbar ────────────────────────────────────────── */
+::-webkit-scrollbar        { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track  { background: transparent; }
 ::-webkit-scrollbar-thumb  {
-  background     : #334155;
-  border-radius  : 10px;
+  background     : #1e293b;
+  border-radius  : 20px;
 }
-::-webkit-scrollbar-thumb:hover { background: #475569; }
+::-webkit-scrollbar-thumb:hover { background: #334155; }
 
-/* ── Refined Animations ────────────────────────────────────────────────── */
-@keyframes slideUp {
-  from { opacity: 0; transform: translateY(12px) scale(0.99); }
-  to   { opacity: 1; transform: translateY(0) scale(1);      }
+/* ── Refined Motion Suite ────────────────────────────────────────────────── */
+@keyframes slideUpFade {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-.animate-reveal    { animation: slideUp 0.5s cubic-bezier(0, 0, 0.2, 1) both; }
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
 
+@keyframes slowPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 0.8; }
+}
+
+.animate-reveal { 
+  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; 
+}
+
+.animate-fade-in { 
+  animation: fadeIn 0.4s ease-out both; 
+}
+
+.animate-glow-pulse {
+  animation: slowPulse 3s ease-in-out infinite;
+}
 
 /* Staggered load effects */
-.stagger-1 { animation-delay: 100ms; }
-.stagger-2 { animation-delay: 200ms; }
-.stagger-3 { animation-delay: 300ms; }
+.stagger-1 { animation-delay: 80ms; }
+.stagger-2 { animation-delay: 160ms; }
+.stagger-3 { animation-delay: 240ms; }
+
+/* ── Custom Utilities ───────────────────────────────────────────────────── */
+.text-balance { text-wrap: balance; }
+.text-glow { text-shadow: 0 0 20px hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.3); }
+.border-glow { box-shadow: 0 0 0 1px hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.1); }
+

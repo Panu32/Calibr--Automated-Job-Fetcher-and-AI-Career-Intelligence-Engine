@@ -40,6 +40,7 @@ RESUMES_COLLECTION      = "resumes"
 JOBS_COLLECTION         = "jobs"
 USERS_COLLECTION        = "users"
 CHAT_HISTORY_COLLECTION = "chat_history"
+API_USAGE_COLLECTION    = "api_usage"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -530,3 +531,58 @@ def get_user_by_id(user_id: str) -> dict | None:
     except Exception as e:
         logger.error(f"get_user_by_id failed for '{user_id}': {e}")
         return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+#  API Usage Tracking
+# ─────────────────────────────────────────────────────────────────────────────
+
+def check_and_increment_api_usage(api_name: str, limit: int) -> bool:
+    """
+    Atomically check and increment the usage count for a given API in the
+    current calendar month.
+    
+    Returns:
+        True if the increment succeeded and the total is <= limit.
+        False if the limit has been reached.
+    """
+    try:
+        db = get_db()
+        collection = db[API_USAGE_COLLECTION]
+        
+        # Key by month and year (e.g. "04_2026")
+        month_key = datetime.utcnow().strftime("%m_%Y")
+        
+        # update_one with $inc is atomic in MongoDB
+        # We don't check BEFORE incrementing to avoid race conditions.
+        # Instead, we increment and then check the result.
+        result = collection.find_one_and_update(
+            filter={"api_name": api_name, "month": month_key},
+            update={"$inc": {"count": 1}},
+            upsert=True,
+            return_document=True   # returns the document AFTER increment
+        )
+        
+        current_count = result.get("count", 0)
+        
+        if current_count > limit:
+            logger.warning(f"Quota exceeded for '{api_name}': {current_count}/{limit}")
+            return False
+            
+        logger.info(f"API usage tracked for '{api_name}': {current_count}/{limit}")
+        return True
+        
+    except PyMongoError as e:
+        logger.error(f"check_and_increment_api_usage failed for '{api_name}': {e}")
+        # On DB error, we default to ALLOWING the request to avoid breaking the core feature.
+        return True
+
+def get_api_usage(api_name: str) -> int:
+    """Return the current month's usage count for an API."""
+    try:
+        db = get_db()
+        month_key = datetime.utcnow().strftime("%m_%Y")
+        doc = db[API_USAGE_COLLECTION].find_one({"api_name": api_name, "month": month_key})
+        return doc.get("count", 0) if doc else 0
+    except Exception:
+        return 0

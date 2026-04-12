@@ -357,9 +357,24 @@ def find_matching_jobs(user_id: str, top_k: int = 15) -> list[str]:
             include=["embeddings"],
         )
 
+        # ── LAZY EMBEDDING FALLBACK ───────────────────────────────────────
+        # If no embeddings exist, try embedding the raw text from MongoDB once
         if not user_data["embeddings"]:
-            logger.warning(f"No resume embeddings found for user '{user_id}'")
-            return []
+            logger.info(f"No embeddings found for user '{user_id}' — attempting lazy embedding...")
+            from db.mongodb import get_resume
+            resume_doc = get_resume(user_id)
+            if resume_doc and resume_doc.get("raw_text"):
+                success = embed_resume(user_id, resume_doc["raw_text"])
+                if success:
+                    # Retry the fetch from Chroma
+                    user_data = resume_collection.get(
+                        where={"user_id": user_id},
+                        include=["embeddings"],
+                    )
+            
+            if not user_data.get("embeddings"):
+                logger.warning(f"Lazy embedding failed or no text for user '{user_id}'")
+                return []
 
         chunk_vectors = user_data["embeddings"]  # list of list[float]
         logger.info(f"Found {len(chunk_vectors)} resume chunks for user '{user_id}'")
@@ -387,21 +402,28 @@ def find_matching_jobs(user_id: str, top_k: int = 15) -> list[str]:
             logger.info(f"No matching jobs found for user '{user_id}'")
             return []
 
-        # ── 4. Extract job_ids sorted by distance (lower distance = better match) ─
-        # ChromaDB returns results already sorted by ascending distance.
-        # "distances" with cosine metric = 1 - cosine_similarity,
-        # so lower distance = higher similarity = better match.
-        matched_job_ids = [
-            meta["job_id"]
-            for meta in results["metadatas"][0]   # [0] because we sent 1 query
-            if "job_id" in meta
-        ]
+        # ── 4. Extract job_ids and distances (lower distance = better match) ──
+        # ChromaDB returns distance: 0.0 means identical, 1.0+ means different.
+        # We convert distance to a similarity match percentage: (1 - distance) * 100
+        matched_results = []
+        for i in range(len(results["ids"][0])):
+            job_id = results["metadatas"][0][i]["job_id"]
+            distance = results["distances"][0][i]
+            
+            # Simple conversion: lower distance -> higher score
+            # Cap at 0-100 range
+            match_score = max(0.0, min(100.0, (1.0 - distance) * 100.0))
+            
+            matched_results.append({
+                "job_id": job_id,
+                "match_score": round(match_score, 1)
+            })
 
         logger.info(
-            f"find_matching_jobs: returning {len(matched_job_ids)} matches "
+            f"find_matching_jobs: returning {len(matched_results)} ranked results "
             f"for user '{user_id}'"
         )
-        return matched_job_ids
+        return matched_results
 
     except Exception as e:
         logger.error(f"find_matching_jobs failed for user '{user_id}': {e}")

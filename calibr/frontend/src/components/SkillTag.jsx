@@ -1,61 +1,48 @@
-/**
- * components/SkillTag.jsx
- * ─────────────────────────────────────────────────────────────────────────
- * Calibr – Skill Pill Badge
- *
- * A simple coloured pill that represents a single skill.
- * Colour is driven by the `type` prop:
- *   "has"     → emerald (user has this skill)
- *   "missing" → rose    (skill is absent from resume)
- *   "weak"    → amber   (skill exists but needs improvement)
- *   (default) → indigo  (neutral — used in resume/JD skill lists)
- * ─────────────────────────────────────────────────────────────────────────
- */
-
 import React from "react";
 import { CheckCircle2, XCircle, AlertCircle, Tag } from "lucide-react";
 
-// Maps type → Tailwind colour classes + icon component
+/**
+ * Technical Node styling logic
+ */
 const TYPE_STYLES = {
   has: {
-    classes: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+    classes: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20 shadow-[0_0_15px_-5px_rgba(16,185,129,0.3)]",
     Icon   : CheckCircle2,
   },
   missing: {
-    classes: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+    classes: "bg-rose-500/10 text-rose-400 border-rose-500/20 shadow-[0_0_15px_-5px_rgba(244,63,94,0.3)]",
     Icon   : XCircle,
   },
   weak: {
-    classes: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+    classes: "bg-amber-500/10 text-amber-400 border-amber-500/20 shadow-[0_0_15px_-5px_rgba(245,158,11,0.3)]",
     Icon   : AlertCircle,
   },
   default: {
-    classes: "bg-indigo-500/15 text-indigo-300 border-indigo-500/25",
+    classes: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20 shadow-[0_0_15px_-5px_rgba(99,102,241,0.2)]",
     Icon   : Tag,
   },
 };
 
 /**
- * @param {string}  skill  - The skill name to display
- * @param {string}  type   - "has" | "missing" | "weak" | undefined
- * @param {boolean} showIcon - Whether to show the type indicator icon (default true)
+ * SkillTag - The Technical Node Pill
  */
-export default function SkillTag({ skill, type, showIcon = true }) {
+export default function SkillTag({ skill, type, showIcon = true, className = "" }) {
   const style = TYPE_STYLES[type] || TYPE_STYLES.default;
   const Icon  = style.Icon;
 
   return (
     <span
       className={[
-        "inline-flex items-center gap-1.5 px-2.5 py-1",
-        "rounded-full text-xs font-medium border",
-        "transition-transform duration-150 hover:scale-105",
+        "inline-flex items-center gap-2 px-3.5 py-1.5",
+        "rounded-xl text-[10px] font-black uppercase tracking-widest border",
+        "transition-all duration-300 hover:brightness-125 hover:scale-105 select-none",
         style.classes,
+        className,
       ].join(" ")}
     >
-      {/* Small icon indicates skill status at a glance */}
-      {showIcon && <Icon size={10} className="flex-shrink-0" />}
-      {skill}
+      {showIcon && <Icon size={11} className="flex-shrink-0 opacity-80" />}
+      <span className="leading-none">{skill}</span>
     </span>
   );
 }
+

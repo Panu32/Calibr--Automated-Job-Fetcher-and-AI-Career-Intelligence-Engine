@@ -1,18 +1,3 @@
-/**
- * components/JobCard.jsx
- * ─────────────────────────────────────────────────────────────────────────
- * Calibr – Single Job Listing Card
- *
- * Displays one job listing with:
- *   - Title, company, location
- *   - Colour-coded match score badge
- *   - Salary (if available)
- *   - Source API badge (Adzuna / JSearch)
- *   - Fetch date
- *   - "View Job" button → opens URL in new tab
- * ─────────────────────────────────────────────────────────────────────────
- */
-
 import React from "react";
 import {
   Building2,
@@ -21,40 +6,27 @@ import {
   ExternalLink,
   Zap,
   Calendar,
+  Layers,
 } from "lucide-react";
 
 /**
- * Return Tailwind classes for the match score badge based on score value.
- * >= 80 → green (strong match)
- * 50-79 → yellow (moderate match)
- * < 50  → gray (weak match)
+ * Precision Match Indicator styling
  */
 function getMatchBadgeStyle(score) {
-  if (score >= 80) return "bg-emerald-500/20 text-emerald-300 border-emerald-500/30";
-  if (score >= 50) return "bg-amber-500/20  text-amber-300  border-amber-500/30";
-  return               "bg-slate-500/20   text-slate-400  border-slate-500/30";
+  if (score >= 90) return "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
+  if (score >= 70) return "text-indigo-400 bg-indigo-500/10 border-indigo-500/20";
+  if (score >= 50) return "text-amber-400 bg-amber-500/10 border-amber-500/20";
+  return "text-slate-500 bg-slate-500/10 border-slate-500/20";
 }
 
 /**
- * Format the source API name for display.
- */
-function formatSource(source) {
-  const map = {
-    adzuna : "Adzuna",
-    jsearch: "JSearch",
-    mock   : "Demo",
-  };
-  return map[source?.toLowerCase()] || source || "Unknown";
-}
-
-/**
- * @param {Object} job - A JobListing object from the store
+ * Job Listing Entry - Semantic Detail View
  */
 export default function JobCard({ job }) {
   const {
-    title       = "Unknown Title",
-    company     = "Unknown Company",
-    location    = "Remote",
+    title       = "Executive Position",
+    company     = "Confidential Organisation",
+    location    = "Distributed / Remote",
     salary,
     match_score = 0,
     date_fetched,
@@ -63,108 +35,96 @@ export default function JobCard({ job }) {
     source,
   } = job;
 
-  // Round match_score to nearest integer for display
   const score        = Math.round(match_score);
   const badgeStyle   = getMatchBadgeStyle(score);
-  const sourceLabel  = formatSource(source);
-
-  // Truncate description for card preview
-  const preview = description.length > 130
-    ? description.slice(0, 130) + "…"
+  
+  const preview = description.length > 120
+    ? description.slice(0, 120) + "..."
     : description;
 
   return (
     <article
       className={[
-        "glass-card p-6 flex flex-col gap-5",
-        "border border-white/5",
-        "hover:border-indigo-500/30 hover:shadow-2xl hover:shadow-indigo-500/5",
-        "transition-all duration-300 cursor-default",
-        "animate-reveal",
+        "glass-card p-7 flex flex-col h-full",
+        "border border-white/[0.03]",
+        "hover:border-indigo-500/30 hover:shadow-[0_20px_40px_-15px_rgba(0,0,0,0.5)]",
+        "transition-all duration-700 group cursor-default",
       ].join(" ")}
     >
-      {/* ── Top row: title + match score ────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-4">
-        <div className="min-w-0">
-          {/* Job title */}
-          <h3 className="font-heading font-bold text-white text-lg leading-tight truncate tracking-tight">
-            {title}
-          </h3>
+      {/* ── Match Precision Header ── */}
+      <div className="flex justify-between items-start mb-6">
+        <div className={`px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-[0.2em] shadow-inner ${badgeStyle}`}>
+           {score}% SEMANTIC MATCH
+        </div>
+        <div className="flex gap-2 opacity-20 group-hover:opacity-100 transition-opacity">
+           <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+           <div className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+        </div>
+      </div>
 
-          {/* Company + location */}
-          <div className="flex items-center flex-wrap gap-x-4 gap-y-1 mt-2">
-            <span className="flex items-center gap-1.5 text-xs text-slate-400 font-medium">
-              <Building2 size={12} className="text-indigo-400/70" />
-              {company}
-            </span>
-            <span className="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
-              <MapPin size={12} />
-              {location}
-            </span>
+      {/* ── Identity & Title ── */}
+      <div className="space-y-3 mb-6">
+        <h3 className="font-heading font-black text-white text-xl leading-tight tracking-tighter group-hover:text-indigo-400 transition-colors duration-500">
+          {title}
+        </h3>
+        
+        <div className="flex flex-wrap gap-x-5 gap-y-2">
+          <span className="flex items-center gap-2 text-[11px] text-slate-400 font-bold uppercase tracking-tight">
+            <Building2 size={13} className="text-indigo-500 opacity-60" />
+            {company}
+          </span>
+          <span className="flex items-center gap-2 text-[11px] text-slate-500 font-bold uppercase tracking-tight">
+            <MapPin size={13} />
+            {location}
+          </span>
+        </div>
+      </div>
+
+      {/* ── Intelligence Preview ── */}
+      <div className="relative mb-6">
+         <p className="text-sm text-slate-500 leading-relaxed font-medium line-clamp-2">
+           {preview || "No technical description provided in source metadata."}
+         </p>
+      </div>
+
+      {/* ── Technical Metadata ── */}
+      <div className="flex items-center justify-between mt-auto pt-6 border-t border-white/[0.03]">
+        <div className="flex gap-3">
+          {salary && (
+            <div className="flex items-center gap-1.5 text-[9px] font-black text-emerald-400 uppercase tracking-widest bg-emerald-500/5 px-2.5 py-1.5 rounded-lg border border-emerald-500/10">
+              <IndianRupee size={10} />
+              {salary}
+            </div>
+          )}
+          <div className="flex items-center gap-1.5 text-[9px] font-black text-slate-500 uppercase tracking-widest bg-white/[0.02] px-2.5 py-1.5 rounded-lg border border-white/[0.03]">
+            <Layers size={10} className="text-indigo-500/60" />
+            {source === "adzuna" ? "ADZUNA" : "JSEARCH"}
           </div>
         </div>
-
-        {/* Match score badge */}
-        <div
-          className={[
-            "flex-shrink-0 px-3 py-1 rounded-full",
-            "text-[10px] font-black uppercase tracking-widest border",
-            badgeStyle,
-          ].join(" ")}
-        >
-          {score}% Match
+        
+        <div className="flex items-center gap-2 text-[9px] font-black text-slate-600 uppercase tracking-widest">
+          <Calendar size={11} />
+          {date_fetched?.split('T')[0] || "Live"}
         </div>
       </div>
 
-      {/* ── Description preview ──────────────────────────────────────────── */}
-      {preview && (
-        <p className="text-xs text-slate-500 leading-relaxed line-clamp-2 font-medium">
-          {preview}
-        </p>
-      )}
-
-      {/* ── Meta row: salary + source + date ─────────────────────────────── */}
-      <div className="flex items-center flex-wrap gap-3 mt-1">
-        {/* Salary */}
-        {salary && (
-          <span className="flex items-center gap-1.5 text-[10px] font-bold text-emerald-400 bg-emerald-500/5 px-2.5 py-1 rounded-lg border border-emerald-500/10">
-            <IndianRupee size={11} />
-            {salary}
-          </span>
-        )}
-
-        {/* Source badge */}
-        <span className="flex items-center gap-1.5 text-[10px] font-bold text-slate-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
-          <Zap size={10} className="text-indigo-400" />
-          {sourceLabel}
-        </span>
-
-        {/* Date */}
-        {date_fetched && (
-          <span className="flex items-center gap-1.5 text-[10px] text-slate-500 font-semibold ml-auto">
-            <Calendar size={11} />
-            {date_fetched === String(new Date().toISOString().slice(0, 10))
-              ? "Today"
-              : date_fetched}
-          </span>
-        )}
-      </div>
-
-      {/* ── Action: View job ──────────────────────────────────────────────── */}
+      {/* ── Action: Deployment ── */}
       <a
         href={url || "#"}
         target="_blank"
         rel="noopener noreferrer"
-        id={`view-job-${job.job_id}`}
         className={[
-          "btn-primary w-full",
-          !url ? "opacity-30 pointer-events-none" : "",
+          "mt-6 flex items-center justify-center gap-3 px-6 py-4 rounded-2xl",
+          "text-[10px] font-black uppercase tracking-[0.3em] transition-all duration-500",
+          url 
+            ? "bg-white/[0.02] text-slate-400 border border-white/[0.05] hover:bg-white hover:text-black hover:scale-[1.02] hover:shadow-xl" 
+            : "opacity-20 cursor-not-allowed bg-slate-900",
         ].join(" ")}
-        aria-label={`View job: ${title} at ${company}`}
       >
-        View Job Details
-        <ExternalLink size={14} className="opacity-70" />
+        Deploy Application
+        <ExternalLink size={14} />
       </a>
     </article>
   );
 }
+

@@ -1,77 +1,73 @@
-/**
- * pages/Jobs.jsx
- * ─────────────────────────────────────────────────────────────────────────
- * Calibr – Jobs Feed Page
- *
- * On mount: fetches today's ranked job listings from API.
- * Top bar: date, job count, refresh button.
- * Filter chips: location and type filters (local state).
- * Job grid: skeleton cards while loading, JobCard per result.
- * Empty state: message + refresh CTA if no jobs found.
- * ─────────────────────────────────────────────────────────────────────────
- */
-
 import React, { useEffect, useState, useMemo } from "react";
 import {
   RefreshCw,
   Loader2,
   Briefcase,
   SearchX,
+  Sparkles,
+  Command,
+  TrendingUp,
 } from "lucide-react";
 
 import { useAppStore }     from "../store/useAppStore";
 import { getJobs, refreshJobs } from "../services/api";
 import JobCard             from "../components/JobCard";
 
-// ── Filter chip options ────────────────────────────────────────────────────
-// "all" means no filter. Others are location/type substrings to match against.
+/**
+ * Filter chip definition - Semantic Categories
+ */
 const FILTER_CHIPS = [
-  { label: "All",         value: "all"       },
-  { label: "Remote",      value: "remote"    },
-  { label: "Bengaluru",   value: "bengaluru" },
-  { label: "Mumbai",      value: "mumbai"    },
-  { label: "Hyderabad",   value: "hyderabad" },
-  { label: "Delhi",       value: "delhi"     },
-  { label: "Startup",     value: "startup"   },
+  { label: "All Sectors",   value: "all"       },
+  { label: "Remote Sync",   value: "remote"    },
+  { label: "Bengaluru",     value: "bengaluru" },
+  { label: "Mumbai",        value: "mumbai"    },
+  { label: "Hyderabad",     value: "hyderabad" },
+  { label: "Delhi NCR",     value: "delhi"     },
 ];
 
-// ── Skeleton card ─────────────────────────────────────────────────────────
+/**
+ * Skeleton Card - Processing Simulation
+ */
 function SkeletonCard() {
   return (
-    <div className="glass-card p-5 space-y-3 animate-pulse">
-      <div className="flex justify-between">
-        <div className="space-y-2">
-          <div className="h-4 w-40 bg-slate-700 rounded" />
-          <div className="h-3 w-28 bg-slate-800 rounded" />
+    <div className="glass-card p-6 space-y-4 animate-pulse border-white/[0.03]">
+      <div className="flex justify-between items-start">
+        <div className="space-y-3 flex-1">
+          <div className="h-5 w-48 bg-slate-800 rounded-lg" />
+          <div className="h-3 w-32 bg-slate-900 rounded-md" />
         </div>
-        <div className="h-6 w-16 bg-slate-700 rounded-full" />
+        <div className="h-7 w-20 bg-slate-800 rounded-full" />
       </div>
-      <div className="h-3 w-full bg-slate-800 rounded" />
-      <div className="h-3 w-3/4 bg-slate-800 rounded" />
-      <div className="h-8 w-full bg-slate-800 rounded-lg" />
+      <div className="space-y-2 pt-2">
+        <div className="h-3 w-full bg-slate-900 rounded-md" />
+        <div className="h-3 w-3/4 bg-slate-900 rounded-md" />
+      </div>
+      <div className="h-11 w-full bg-indigo-500/5 rounded-xl border border-white/[0.02]" />
     </div>
   );
 }
 
+/**
+ * Jobs Feed - The Market Intelligence Deck
+ */
 export default function Jobs() {
   const { user, jobs, setJobs, setError, resumeData } = useAppStore();
   const userId = user?._id || user?.id;
 
-  const [loading,         setLoading]         = useState(false);   // initial fetch
-  const [refreshLoading,  setRefreshLoading]  = useState(false);   // manual refresh
-  const [activeFilter,    setActiveFilter]    = useState("all");   // selected chip
+  const [loading,         setLoading]         = useState(false);
+  const [refreshLoading,  setRefreshLoading]  = useState(false);
+  const [activeFilter,    setActiveFilter]    = useState("all");
 
-  // ── Fetch jobs on mount ──────────────────────────────────────────────────
   useEffect(() => {
-    if (!resumeData) return;   // don't fetch if no resume yet
+    if (!resumeData) return;
 
     const fetchJobs = async () => {
       setLoading(true);
       try {
-        const data = await getJobs(userId);    // GET /jobs/{userId}
+        const data = await getJobs(userId);
         setJobs(data.jobs || []);
       } catch (err) {
-        setError(err.message || "Failed to load jobs.");
+        setError(err.message || "Failed to load opportunities.");
       } finally {
         setLoading(false);
       }
@@ -80,162 +76,180 @@ export default function Jobs() {
     fetchJobs();
   }, [userId, resumeData]);
 
-  // ── Manual refresh ───────────────────────────────────────────────────────
   const handleRefresh = async () => {
     setRefreshLoading(true);
     try {
-      await refreshJobs(userId);           // POST /jobs/refresh/{userId}
-      const data = await getJobs(userId);  // then reload the feed
+      await refreshJobs(userId);
+      const data = await getJobs(userId);
       setJobs(data.jobs || []);
     } catch (err) {
-      setError(err.message || "Refresh failed.");
+      setError(err.message || "Scan failed.");
     } finally {
       setRefreshLoading(false);
     }
   };
 
-  // ── Client-side filter ───────────────────────────────────────────────────
-  // Filters jobs array by checking if the activeFilter value appears in
-  // the job's location field (case-insensitive substring match).
   const filteredJobs = useMemo(() => {
     if (activeFilter === "all") return jobs;
     return jobs.filter((job) => {
       const loc = (job.location || "").toLowerCase();
-      const src = (job.source  || "").toLowerCase();
       const val = activeFilter.toLowerCase();
-      return loc.includes(val) || src.includes(val);
+      return loc.includes(val);
     });
   }, [jobs, activeFilter]);
 
-  // ── Formatted date ───────────────────────────────────────────────────────
   const todayLabel = new Date().toLocaleDateString("en-IN", {
-    weekday: "short", day: "numeric", month: "short",
+    weekday: "long", day: "numeric", month: "long",
   });
 
   return (
-    <div className="min-h-full p-8 md:p-12 max-w-6xl mx-auto space-y-10">
-
-      {/* ── Page header ─────────────────────────────────────────────────── */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 animate-reveal">
-        <div>
-          <div className="inline-flex items-center gap-2 mb-4 bg-white/5 border border-white/10 rounded-full px-3 py-1.5">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.6)]"></div>
-            <span className="text-[9px] uppercase font-black tracking-[0.2em] text-emerald-400">Live Global Feed</span>
+    <div className="min-h-full p-8 md:p-16 max-w-7xl mx-auto space-y-12 relative">
+      
+      {/* ── Page Header ── */}
+      <section className="flex flex-col md:flex-row md:items-end justify-between gap-8 animate-reveal">
+        <div className="max-w-2xl">
+          <div className="inline-flex items-center gap-3 mb-6 bg-indigo-500/5 border border-indigo-500/10 rounded-full px-4 py-2 hover:bg-indigo-500/10 transition-all cursor-default group">
+            <TrendingUp size={14} className="text-indigo-400" />
+            <span className="text-[10px] uppercase font-black tracking-[0.3em] text-indigo-400/80">Active Market Synchronisation</span>
           </div>
-          <h1 className="font-heading text-4xl font-black text-white tracking-tighter leading-none">
-            Strategic <span className="text-indigo-400">Opportunities.</span>
+
+          <h1 className="font-heading text-5xl font-black text-white tracking-tighter leading-none text-balance">
+            Semantic <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-indigo-600 text-glow">Opportunities.</span>
           </h1>
-          <p className="text-gray-500 text-lg mt-3 font-medium">
-            {todayLabel}
+          
+          <div className="flex items-center gap-4 mt-6">
+            <p className="text-slate-500 font-bold text-sm tracking-tight">{todayLabel}</p>
             {!loading && (
-              <span className="text-white ml-2">
-                · {filteredJobs.length} Ranked matches detected
-              </span>
+              <>
+                <div className="w-1 h-1 rounded-full bg-slate-800"></div>
+                <p className="text-indigo-400/80 text-sm font-black tracking-tight">
+                  {filteredJobs.length} R-MATCHED ENTRIES
+                </p>
+              </>
             )}
-          </p>
+          </div>
         </div>
 
-        {/* Refresh button */}
-        <button
-          id="refresh-jobs-btn"
-          onClick={handleRefresh}
-          disabled={refreshLoading || loading || !resumeData}
-          className="px-6 py-3.5 rounded-2xl text-[10px] font-black uppercase tracking-widest bg-white/5 border border-white/10 hover:bg-white/10 hover:text-white text-gray-400 disabled:opacity-20 transition-all flex items-center gap-3"
-          aria-label="Refresh job listings"
-        >
-          {refreshLoading ? (
-            <Loader2 size={14} className="animate-spin text-indigo-400" />
-          ) : (
-            <RefreshCw size={14} />
+        {/* Global Action Engine */}
+        <div className="flex flex-col items-end gap-3">
+          <button
+            onClick={handleRefresh}
+            disabled={refreshLoading || loading || !resumeData}
+            className="group relative px-10 py-4.5 rounded-[22px] overflow-hidden transition-all duration-500 disabled:opacity-30"
+          >
+            {/* Background Layer */}
+            <div className="absolute inset-0 bg-indigo-600 opacity-10 group-hover:opacity-15 transition-opacity"></div>
+            <div className="absolute inset-x-0 bottom-0 h-0.5 bg-indigo-500 group-hover:h-1 transition-all"></div>
+            
+            <div className="relative flex items-center gap-4">
+              {refreshLoading ? (
+                <Loader2 size={18} className="animate-spin text-indigo-400" />
+              ) : (
+                <RefreshCw size={18} className="text-indigo-400 group-hover:rotate-180 transition-transform duration-1000" />
+              )}
+              <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white">
+                {refreshLoading ? "Executing Neural Scan..." : "Initiate Global Search"}
+              </span>
+            </div>
+          </button>
+          
+          {!loading && !refreshLoading && filteredJobs.length === 0 && (
+            <div className="flex items-center gap-2 pr-2 opacity-50">
+               <Command size={10} className="text-slate-600" />
+               <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Awaiting Manual Override</p>
+            </div>
           )}
-          Re-Scan Network
-        </button>
-      </div>
+        </div>
+      </section>
 
-      {/* ── No resume banner ─────────────────────────────────────────────── */}
+      {/* ── Neural Lock State (Conditional) ── */}
       {!resumeData && (
-        <div className="glass-card p-12 text-center animate-reveal stagger-1 bg-white/[0.02]">
-          <div className="w-20 h-20 rounded-3xl bg-white/[0.03] border border-white/10 flex items-center justify-center mx-auto mb-6">
-            <Briefcase size={40} className="text-gray-600" />
+        <div className="glass-card p-20 text-center animate-reveal border-white/[0.03] space-y-8">
+          <div className="relative inline-block">
+             <div className="absolute -inset-6 bg-indigo-500/10 blur-2xl rounded-full"></div>
+             <div className="w-24 h-24 rounded-[32px] bg-slate-900 border border-white/5 flex items-center justify-center relative z-10 mx-auto">
+               <Briefcase size={40} className="text-slate-700" />
+             </div>
           </div>
-          <p className="font-black text-white text-2xl tracking-tight mb-2">Neural Link Required</p>
-          <p className="text-gray-500 text-lg max-w-md mx-auto">
-            Sync your resume to activate the semantic matching engine.
-          </p>
+          <div className="space-y-3">
+             <h3 className="font-black text-white text-3xl tracking-tighter">Neural Bridge Required</h3>
+             <p className="text-slate-500 text-lg max-w-md mx-auto font-medium leading-relaxed">
+               Sync your professional footprint in the Strategy Module to activate semantic market matching.
+             </p>
+          </div>
         </div>
       )}
 
-      {/* ── Filter chips (horizontal scroll) ─────────────────────────────── */}
+      {/* ── Semantic Filter Deck ── */}
       {resumeData && (
-        <div
-          className="flex gap-2.5 pb-2 overflow-x-auto no-scrollbar animate-reveal stagger-1"
-          role="group"
-          aria-label="Job filters"
-        >
-          {FILTER_CHIPS.map((chip) => (
+        <nav className="animate-reveal stagger-1 flex gap-3 pb-4 overflow-x-auto no-scrollbar mask-fade-right">
+          {FILTER_CHIPS.map((chip, i) => (
             <button
               key={chip.value}
-              id={`filter-${chip.value}`}
               onClick={() => setActiveFilter(chip.value)}
               className={[
-                "flex-shrink-0 px-5 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all duration-300 border",
+                "flex-shrink-0 px-7 py-3 rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all duration-500 border",
                 activeFilter === chip.value
-                  ? "bg-gradient-to-br from-purple-600 to-indigo-600 border-indigo-500 text-white shadow-lg shadow-purple-500/20 scale-105"
-                  : "bg-white/[0.03] border-white/5 text-gray-500 hover:border-white/20 hover:text-gray-300",
+                  ? "bg-indigo-600 border-indigo-500 text-white shadow-[0_10px_20px_rgba(79,70,229,0.3)] scale-105"
+                  : "bg-white/[0.02] border-white/[0.03] text-slate-500 hover:border-white/10 hover:text-slate-300",
               ].join(" ")}
-              aria-pressed={activeFilter === chip.value}
+              style={{ animationDelay: `${i * 50}ms` }}
             >
               {chip.label}
             </button>
           ))}
-        </div>
+        </nav>
       )}
 
-      {/* ── Skeleton loading ──────────────────────────────────────────────── */}
+      {/* ── Process Grid (Loading States) ── */}
       {(loading || refreshLoading) && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-reveal stagger-2">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-reveal stagger-2">
           {[...Array(6)].map((_, i) => <SkeletonCard key={i} />)}
         </div>
       )}
 
-      {/* ── Job grid ──────────────────────────────────────────────────────── */}
+      {/* ── Opportunity Grid ── */}
       {!loading && !refreshLoading && filteredJobs.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredJobs.map((job, i) => (
             <div 
               key={job.job_id} 
               className="animate-reveal" 
-              style={{ animationDelay: `${i * 100}ms` }}
+              style={{ animationDelay: `${i * 50}ms` }}
             >
               <JobCard job={job} />
             </div>
           ))}
-        </div>
+        </section>
       )}
 
-      {/* ── Empty state ───────────────────────────────────────────────────── */}
+      {/* ── Search Exhausted / Empty State ── */}
       {!loading && !refreshLoading && resumeData && filteredJobs.length === 0 && (
-        <div className="glass-card p-16 text-center animate-reveal bg-white/[0.02]">
-          <div className="w-16 h-16 rounded-3xl bg-white/[0.03] border border-white/10 flex items-center justify-center mx-auto mb-8">
-            <SearchX size={32} className="text-gray-600" />
+        <div className="glass-card p-24 text-center animate-reveal border-white/[0.03] space-y-10">
+          <div className="relative inline-block">
+             <div className="absolute -inset-6 bg-rose-500/5 blur-2xl rounded-full"></div>
+             <div className="w-20 h-20 rounded-[28px] bg-slate-900 border border-white/5 flex items-center justify-center relative z-10 mx-auto">
+               <SearchX size={32} className="text-slate-700" />
+             </div>
           </div>
-          <p className="font-black text-white text-2xl tracking-tight mb-2">
-            {activeFilter !== "all"
-              ? `No ${activeFilter} matches`
-              : "Feed Depleted"}
-          </p>
-          <p className="text-gray-500 text-lg mb-8 max-w-sm mx-auto">
-            Try expanding your location filters or run a fresh scan to find new opportunities.
-          </p>
+          <div className="space-y-4">
+             <h3 className="font-black text-white text-3xl tracking-tighter">
+               {activeFilter !== "all" ? "Parameter Exhausted" : "Market Feed Depleted"}
+             </h3>
+             <p className="text-slate-500 text-lg max-w-sm mx-auto font-medium leading-relaxed">
+               Current matched entries for these criteria are zero. Modify parameters or execute a fresh global sync.
+             </p>
+          </div>
           <button
             onClick={handleRefresh}
-            className="btn-primary px-10 py-3.5 text-[10px] font-black uppercase tracking-widest inline-flex items-center gap-3 transition-all"
+            className="btn-primary px-12 py-4 text-[10px] font-black uppercase tracking-[0.3em] inline-flex items-center gap-4 group transition-all"
           >
-            <RefreshCw size={14} />
-            Execute New Scan
+            <Sparkles size={16} className="text-indigo-400 group-hover:rotate-12 transition-transform" />
+            Neural Refresh
           </button>
         </div>
       )}
     </div>
   );
 }
+

@@ -112,27 +112,32 @@ async def get_jobs_for_user_feed(user_id: str):
             ),
         )
 
-    # ── Step 2: Trigger on-demand fetch if no jobs exist yet today ─────────
+    # ── Step 2: On-demand fetch is now DISABLED ───────────────────────────
+    # We no longer trigger an automatic fetch when the user checks their feed.
+    # Users must manually trigger a scan via the /refresh endpoint to save credits.
     if not _has_jobs_for_today():
-        logger.info(f"No jobs found for today — triggering on-demand fetch for '{user_id}'")
-        try:
-            new_count = await fetch_and_store_jobs(user_id=user_id)
-            logger.info(f"On-demand fetch complete — {new_count} new jobs saved")
-        except Exception as e:
-            logger.error(f"On-demand job fetch failed for user '{user_id}': {e}")
-            # Non-fatal: continue and return whatever jobs exist in DB
+        logger.info(f"No jobs found for today for user '{user_id}' — awaiting manual refresh.")
 
     # ── Step 3: Rank jobs by semantic similarity to the user's resume ──────
     try:
-        ranked_job_ids = find_matching_jobs(user_id=user_id, top_k=15)
+        ranked_results = find_matching_jobs(user_id=user_id, top_k=15)
+        ranked_job_ids = [r["job_id"] for r in ranked_results]
+        scores_map     = {r["job_id"]: r["match_score"] for r in ranked_results}
     except Exception as e:
         logger.error(f"find_matching_jobs failed for user '{user_id}': {e}")
-        ranked_job_ids = []   # fall through to unranked MongoDB fetch
+        ranked_job_ids = []
+        scores_map     = {}
 
     # ── Step 4: Fetch full job documents from MongoDB ─────────────────────
     if ranked_job_ids:
-        # Fetch the ranked jobs (sorted by match_score inside get_jobs_for_user)
+        # Fetch the full documents
         jobs = get_jobs_for_user(user_id=user_id, job_ids=ranked_job_ids)
+        
+        # Inject the live scores into the job objects
+        for job in jobs:
+            job_id = job.get("job_id")
+            if job_id in scores_map:
+                job["match_score"] = scores_map[job_id]
     else:
         # Fallback: return the 15 most recently fetched jobs (unranked)
         logger.info(f"No ranked job IDs — falling back to most recent jobs")

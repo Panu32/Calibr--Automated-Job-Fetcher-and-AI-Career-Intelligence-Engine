@@ -11,6 +11,7 @@ This module is the conversational AI core of Calibr.
 import logging
 import os
 import time
+from datetime import datetime
 import concurrent.futures
 from typing import Optional
 
@@ -95,6 +96,9 @@ async def chat_with_resume_stream(
         chain = build_chat_chain()
         full_response_parts = []
         
+        # Current date for prompt
+        current_date_str = datetime.now().strftime("%B %d, %Y")
+
         # Use astream for real-time token delivery
         # We wrap chunks in SSE format: data: <chunk>\n\n
         async for chunk in chain.astream({
@@ -102,6 +106,7 @@ async def chat_with_resume_stream(
             "chat_history": chat_history_str,
             "question"    : question,
             "rag_context" : rag_context,
+            "current_date": current_date_str,
         }):
             if chunk:
                 full_response_parts.append(chunk)
@@ -153,6 +158,7 @@ def chat_with_resume(
         # ── Step 4: Invoke chain with strict logic-level timeout ───────────
         chain = build_chat_chain()
         start_step = time.perf_counter()
+        current_date_str = datetime.now().strftime("%B %d, %Y")
         
         # We enforce a hard 10s timeout on the entire chain execution.
         try:
@@ -165,6 +171,7 @@ def chat_with_resume(
                         "chat_history": chat_history_str,
                         "question"    : question,
                         "rag_context" : rag_context,
+                        "current_date": current_date_str,
                     }
                 )
                 # Wait for at most 12 seconds (slightly narrower than the 15s API timeout)
@@ -236,9 +243,10 @@ def get_rag_context(user_id: str, question: str) -> str:
         # ── Step 3: Query Tech News Collection (Market Intelligence) ────────
         news_collection = get_or_create_collection("tech_news")
         if news_collection.count() > 0:
+            # A) Semantic Query (Standard RAG)
             news_results = news_collection.query(
                 query_embeddings=[question_vector],
-                n_results=4, # Give standard news a bit more weight for trends
+                n_results=5, 
                 include=["documents", "metadatas", "distances"],
             )
             
@@ -246,13 +254,37 @@ def get_rag_context(user_id: str, question: str) -> str:
             news_metas = news_results.get("metadatas", [[]])[0]
             news_dists = news_results.get("distances", [[]])[0]
             
+            # We are slightly more lenient with news distance (0.9) to allow broader matches
             relevant_news = [
-                (doc, meta) for doc, meta, dist in zip(news_docs, news_metas, news_dists) if dist < 0.85
+                (doc, meta) for doc, meta, dist in zip(news_docs, news_metas, news_dists) if dist < 0.9
             ]
-            if relevant_news:
-                lines = [f"  - [{m.get('source', 'Web')}] {d[:300]}..." for d, m in relevant_news]
+            
+            # B) Hybrid Retrieval: If user asks for "news", "latest", "today", etc.
+            #    We also pull the ABSOLUTE LATEST 3 items from the DB regardless of semantic score.
+            news_keywords = ["news", "latest", "today", "yesterday", "update", "current", "trend"]
+            is_news_query = any(k in question.lower() for k in news_keywords)
+            
+            latest_news = []
+            if is_news_query:
+                # We fetch 10 items and pick the ones not already in relevant_news
+                recent_results = news_collection.peek(limit=10)
+                recent_docs = recent_results.get("documents", [])
+                recent_metas = recent_results.get("metadatas", [])
+                
+                # Deduplicate against semantic results
+                seen_urls = {m.get("url") for d, m in relevant_news}
+                for d, m in zip(recent_docs, recent_metas):
+                    if m.get("url") not in seen_urls and len(latest_news) < 3:
+                        latest_news.append((d, m))
+                        seen_urls.add(m.get("url"))
+
+            # Combine results
+            final_news = relevant_news + latest_news
+            
+            if final_news:
+                lines = [f"  - [{m.get('source', 'Web')}] {d[:400]}..." for d, m in final_news]
                 news_str = "\n".join(lines)
-                context_parts.append(f"━━━━━━━━ Market Intelligence & Trends ━━━━━━━━\n{news_str}")
+                context_parts.append(f"━━━━━━━━ Market Intelligence & Tech Trends ━━━━━━━━\n{news_str}")
 
         if not context_parts:
             return ""

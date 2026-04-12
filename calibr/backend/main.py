@@ -86,13 +86,13 @@ async def lifespan(app: FastAPI):
     # We store the scheduler on the app state so routers can access it if needed
     app.state.scheduler = AsyncIOScheduler()
     
-    # Register daily job-fetch (07:00 AM)
-    app.state.scheduler.add_job(
-        func=fetch_and_store_jobs,
-        trigger=CronTrigger(hour=7, minute=0),
-        id="daily_job_fetch",
-        replace_existing=True,
-    )
+    # Register daily job-fetch (07:00 AM) - DISABLED to save Groq API credits
+    # app.state.scheduler.add_job(
+    #     func=fetch_and_store_jobs,
+    #     trigger=CronTrigger(hour=7, minute=0),
+    #     id="daily_job_fetch",
+    #     replace_existing=True,
+    # )
 
     # Register Market Intel sync (Every 6 hours)
     app.state.scheduler.add_job(

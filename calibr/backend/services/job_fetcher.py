@@ -299,6 +299,13 @@ def fetch_from_jsearch(keyword: str) -> list[dict]:
         "X-RapidAPI-Host": "jsearch.p.rapidapi.com",
     }
 
+    # ── Check usage limit before making the API call ───────────────
+    # We use a threshold of 180 to leave a safety margin (limit is 200).
+    from db.mongodb import check_and_increment_api_usage
+    if not check_and_increment_api_usage("jsearch", 180):
+        logger.warning("JSearch monthly quota (180) reached — skipping fetch to save credits.")
+        return []
+
     params = {
         "query"    : keyword,
         "page"     : "1",
@@ -392,7 +399,7 @@ async def fetch_and_store_jobs(user_id: str = "all") -> int:
 
     Pipeline per user:
         1. Load all users who have a resume from MongoDB.
-        2. For each user, extract the top-5 search keywords via Gemini.
+        2. For each user, extract the top-3 search keywords via Gemini.
         3. For each keyword:
              a. Try Adzuna (primary) → if it returns results, use them.
              b. If Adzuna returns empty or fails → try JSearch (fallback).

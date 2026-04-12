@@ -1,16 +1,3 @@
-/**
- * pages/Home.jsx
- * ─────────────────────────────────────────────────────────────────────────
- * Calibr – Home / Dashboard Page
- *
- * Shows:
- *   - Welcome greeting + tagline
- *   - 3 feature cards (AI Chat / Resume / Jobs)
- *   - "Get started" banner if no resume uploaded
- *   - Stats row (skills, jobs, top match) if resume exists
- * ─────────────────────────────────────────────────────────────────────────
- */
-
 import React from "react";
 import {
   MessageSquare,
@@ -21,60 +8,63 @@ import {
   Upload,
   Target,
   TrendingUp,
-  Star,
+  Sparkles,
 } from "lucide-react";
 import { useAppStore } from "../store/useAppStore";
 
-// ── Feature card definition ────────────────────────────────────────────────
+/**
+ * Feature card definition - Neural Architecture
+ */
 const FEATURE_CARDS = [
   {
     tab        : "chat",
     title      : "AI Career Assistant",
-    description: "Personalised guidance powered by Gemini AI. Ask anything about your career path and skill gaps.",
+    description: "Neural-guided mentorship cross-referencing your profile with real-time market fluctuations.",
     icon       : MessageSquare,
-    gradient   : "from-purple-600 to-indigo-600",
-    glow       : "hover:shadow-purple-500/20",
-    badge      : "AI Core",
+    color      : "indigo",
+    badge      : "Active Intelligence",
   },
   {
     tab        : "resume",
     title      : "Skill Gap Analysis",
-    description: "Visualise your technical gaps for any job role and get a custom learning roadmap instantly.",
+    description: "Precision mapping of technical trajectory. Reveal mission-critical gaps in seconds.",
     icon       : FileText,
-    gradient   : "from-cyan-500 to-blue-600",
-    glow       : "hover:shadow-cyan-500/20",
-    badge      : "Smart Engine",
+    color      : "purple",
+    badge      : "Strategy Engine",
   },
   {
     tab        : "jobs",
     title      : "Personalised Feed",
-    description: "Daily job listings fetched and ranked by semantic similarity to your unique profile.",
+    description: "Daily opportunities ranked by semantic similarity to your professional footprint.",
     icon       : Briefcase,
-    gradient   : "from-pink-500 to-rose-600",
-    glow       : "hover:shadow-pink-500/20",
-    badge      : "Daily Refresh",
+    color      : "blue",
+    badge      : "Neural Matching",
   },
 ];
 
-// ── Stat card sub-component ────────────────────────────────────────────────
-function StatCard({ icon: Icon, label, value, colour }) {
+/**
+ * Stat Card - Executive Metrics
+ */
+function StatCard({ icon: Icon, label, value, colorClass }) {
   return (
-    <div className="glass-card px-6 py-5 flex items-center gap-5 border-white/5 bg-white/[0.02]">
-      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner ${colour}`}>
-        <Icon size={20} className="text-white drop-shadow-md" />
+    <div className="glass-card px-8 py-6 flex items-center gap-6 border-white/[0.03]">
+      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${colorClass} bg-opacity-10 border border-current border-opacity-20`}>
+        <Icon size={22} className="drop-shadow-sm" />
       </div>
       <div>
-        <p className="text-3xl font-heading font-black tracking-tight text-white">{value}</p>
-        <p className="text-[10px] uppercase tracking-widest font-bold text-gray-500 mt-0.5">{label}</p>
+        <p className="text-4xl font-heading font-black tracking-tighter text-white leading-none">{value}</p>
+        <p className="text-[9px] uppercase tracking-[0.2em] font-black text-slate-500 mt-2">{label}</p>
       </div>
     </div>
   );
 }
 
+/**
+ * Home Page - The Strategic Control Center
+ */
 export default function Home() {
   const { resumeData, jobs, setActiveTab } = useAppStore();
 
-  // Compute stats from store data
   const skillCount  = resumeData?.skill_count ?? 0;
   const jobCount    = jobs.length;
   const topScore    = jobs.length > 0
@@ -82,137 +72,140 @@ export default function Home() {
     : 0;
 
   return (
-    <div className="min-h-full p-8 md:p-12 max-w-6xl mx-auto">
+    <div className="min-h-full p-8 md:p-16 max-w-7xl mx-auto space-y-20 relative">
 
-      {/* ── Hero greeting ──────────────────────────────────────────────── */}
-      <div className="mb-12 animate-reveal">
-        {/* Logo mark */}
-        <div className="inline-flex items-center gap-2.5 mb-6 bg-white/5 border border-white/10 rounded-full px-4 py-2 hover:bg-white/10 transition-colors cursor-default">
-          <div className="w-5 h-5 rounded-md bg-gradient-to-br from-purple-500 to-indigo-600 flex items-center justify-center shadow-lg">
-            <Zap size={11} className="text-white fill-white" />
-          </div>
-          <span className="text-[10px] uppercase font-black tracking-[0.2em] text-indigo-400">Calibr Intelligence</span>
+      {/* ── Hero Segment ── */}
+      <section className="animate-reveal max-w-4xl">
+        <div className="inline-flex items-center gap-3 mb-8 bg-indigo-500/5 border border-indigo-500/10 rounded-full px-4 py-2 hover:bg-indigo-500/10 transition-all cursor-default group">
+          <Sparkles size={14} className="text-indigo-400 group-hover:rotate-12 transition-transform" />
+          <span className="text-[10px] uppercase font-black tracking-[0.3em] text-indigo-400/80">Calibr Neural Framework</span>
         </div>
 
-        <h1 className="font-heading text-4xl md:text-5xl lg:text-6xl font-black text-white leading-[1.1] tracking-tighter">
-          Elevate your{" "}
-          <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Career Strategy.
+        <h1 className="font-heading text-5xl md:text-6xl lg:text-7xl font-black text-white leading-[1] tracking-tighter text-balance">
+          Master your{" "}
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 text-glow">
+            Professional Trajectory.
           </span>
         </h1>
-        <p className="mt-4 text-gray-400 text-lg md:text-xl max-w-2xl font-medium leading-relaxed">
-          The autonomous AI engine that maps your skills, fetches daily matches, and coaches you to your next major role.
+        <p className="mt-8 text-slate-400 text-lg md:text-xl max-w-2xl font-medium leading-relaxed text-balance">
+          The autonomous career intelligence engine that maps your unique footprint, reveals strategic gaps, and bridges the distance to your next major role.
         </p>
-      </div>
+      </section>
 
-      {/* ── Get-started banner (shown only when no resume uploaded) ───── */}
+      {/* ── Profile Synchronisation (Conditional Banner) ── */}
       {!resumeData && (
-        <div className="animate-reveal stagger-1 mb-12 flex flex-col md:flex-row items-center justify-between gap-6 p-8 rounded-3xl bg-gradient-to-br from-indigo-600/10 via-purple-600/10 to-transparent border border-white/10 shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 blur-[80px] rounded-full group-hover:bg-indigo-500/20 transition-all duration-500"></div>
-          <div className="flex items-center gap-5 relative z-10">
-            <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 flex items-center justify-center border border-indigo-400/30">
-              <Upload size={24} className="text-indigo-400" />
+        <div className="animate-reveal stagger-1 flex flex-col md:flex-row items-center justify-between gap-8 p-10 rounded-[32px] bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent border border-white/5 shadow-2xl relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[100px] rounded-full group-hover:bg-indigo-500/10 transition-all duration-700"></div>
+          
+          <div className="flex items-center gap-6 relative z-10 text-center md:text-left">
+            <div className="w-16 h-16 rounded-[20px] bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 group-hover:scale-105 transition-transform shadow-xl">
+              <Upload size={28} className="text-indigo-400" />
             </div>
             <div>
-              <p className="font-black text-white text-lg tracking-tight">
-                Initialise your Profile
-              </p>
-              <p className="text-sm text-gray-400 font-medium">
-                Upload your resume to unlock personalised AI intelligence.
+              <h3 className="font-black text-white text-xl tracking-tight leading-none mb-2">
+                Initialise Profile Intelligence
+              </h3>
+              <p className="text-sm text-slate-500 font-medium">
+                Upload your professional footprint to activate the neural matching engine.
               </p>
             </div>
           </div>
+          
           <button
-            id="home-upload-resume-btn"
             onClick={() => setActiveTab("resume")}
-            className="btn-primary px-8 relative z-10"
+            className="btn-primary px-10 relative z-10 w-full md:w-auto"
           >
-            Start Analysis
+            Start Strategy
             <ArrowRight size={18} />
           </button>
         </div>
       )}
 
-      {/* ── Stats row (shown only when resume exists) ──────────────────── */}
+      {/* ── Intelligence Metrics (Conditional Row) ── */}
       {resumeData && (
-        <div className="animate-reveal stagger-1 grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+        <div className="animate-reveal stagger-1 grid grid-cols-1 md:grid-cols-3 gap-8">
           <StatCard
             icon={Target}
-            label="Verified Skills"
+            label="Verified Competencies"
             value={skillCount}
-            colour="bg-purple-600"
+            colorClass="text-indigo-400"
           />
           <StatCard
             icon={Briefcase}
-            label="Live Opportunities"
+            label="Ranked Opportunities"
             value={jobCount}
-            colour="bg-blue-600"
+            colorClass="text-blue-400"
           />
           <StatCard
             icon={TrendingUp}
-            label="Match Authority"
+            label="Semantic Match Power"
             value={`${topScore}%`}
-            colour="bg-pink-600"
+            colorClass="text-purple-400"
           />
         </div>
       )}
 
-      {/* ── Feature cards ──────────────────────────────────────────────── */}
-      <h3 className="text-xs uppercase tracking-[0.3em] font-black text-gray-600 mb-6 animate-reveal stagger-2">
-        Core Intelligence Modules
-      </h3>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-reveal stagger-3">
-        {FEATURE_CARDS.map((card, i) => {
-          const Icon = card.icon;
-          return (
-            <button
-              key={card.tab}
-              id={`home-nav-${card.tab}`}
-              onClick={() => setActiveTab(card.tab)}
-              className={[
-                "glass-card p-8 text-left group relative overflow-hidden",
-                "hover:-translate-y-2 hover:shadow-2xl transition-all duration-500",
-                card.glow,
-              ].join(" ")}
-            >
-               {/* Decorative background glow */}
-               <div className={`absolute -bottom-8 -right-8 w-24 h-24 bg-gradient-to-br ${card.gradient} opacity-0 group-hover:opacity-10 blur-2xl transition-opacity duration-500`}></div>
+      {/* ── Intelligence Modules ── */}
+      <section className="space-y-10">
+        <div className="flex items-center gap-4">
+          <h3 className="text-[10px] uppercase tracking-[0.4em] font-black text-slate-700">
+            STRATEGIC MODULES
+          </h3>
+          <div className="h-px flex-1 bg-white/[0.03]"></div>
+        </div>
 
-              {/* Icon */}
-              <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${card.gradient} flex items-center justify-center mb-6 shadow-xl group-hover:scale-110 group-hover:rotate-3 transition-transform duration-300`}>
-                <Icon size={24} className="text-white drop-shadow-md" />
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {FEATURE_CARDS.map((card, i) => {
+            const Icon = card.icon;
+            return (
+              <button
+                key={card.tab}
+                onClick={() => setActiveTab(card.tab)}
+                className="glass-card p-10 text-left group relative flex flex-col h-full animate-reveal"
+                style={{ animationDelay: `${(i + 2) * 100}ms` }}
+              >
+                {/* Visual Flair */}
+                <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
+                   <ArrowRight size={16} className="text-indigo-400 -rotate-45" />
+                </div>
 
-              {/* Badge */}
-              <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">
-                {card.badge}
-              </span>
+                <div className={`w-14 h-14 rounded-2xl bg-indigo-500 bg-opacity-10 flex items-center justify-center mb-8 border border-white/5 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
+                  <Icon size={24} className="text-white drop-shadow-md" />
+                </div>
 
-              {/* Title */}
-              <h2 className="font-heading font-black text-white text-xl mt-3 mb-3 leading-tight tracking-tight">
-                {card.title}
-              </h2>
+                <span className="text-[9px] font-black text-indigo-500/60 uppercase tracking-[0.3em] mb-3">
+                  {card.badge}
+                </span>
 
-              {/* Description */}
-              <p className="text-sm text-gray-400 leading-relaxed font-medium">
-                {card.description}
-              </p>
+                <h2 className="font-heading font-black text-white text-2xl mb-4 leading-tight tracking-tight">
+                  {card.title}
+                </h2>
 
-              {/* CTA */}
-              <div className="mt-8 flex items-center gap-2 text-xs font-black uppercase tracking-widest text-indigo-400 group-hover:text-white transition-all duration-300">
-                Launch Module <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-              </div>
-            </button>
-          );
-        })}
-      </div>
+                <p className="text-sm text-slate-500 leading-relaxed font-medium mb-10 flex-1">
+                  {card.description}
+                </p>
 
-      {/* ── Footer note ────────────────────────────────────────────────── */}
-      <div className="mt-16 pt-8 border-t border-white/5 flex flex-col items-center animate-reveal stagger-3">
-        <p className="text-[10px] uppercase tracking-[0.4em] font-black text-gray-700">
-          Neural Architecture: Gemini 1.5 Flash · text-embedding-004
+                <div className="pt-6 border-t border-white/[0.03] flex items-center justify-between group-hover:border-indigo-500/20 transition-all">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 group-hover:text-indigo-400 transition-colors">Launch Implementation</span>
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-800 group-hover:bg-indigo-400 transition-all shadow-[0_0_8px_transparent] group-hover:shadow-indigo-400/50"></div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* ── Architectural Footer ── */}
+      <footer className="pt-10 border-t border-white/[0.03] flex flex-col md:flex-row items-center justify-between gap-6 opacity-40 hover:opacity-100 transition-opacity duration-700">
+        <p className="text-[9px] uppercase tracking-[0.4em] font-black text-slate-600">
+          Executive Environment: G-1.5 · E-004 · FAISS Vector Space
         </p>
-      </div>
+        <div className="flex gap-8">
+           <span className="text-[9px] font-black text-slate-700 tracking-widest uppercase">Encryption: AES-256</span>
+           <span className="text-[9px] font-black text-slate-700 tracking-widest uppercase">Status: Live Sync</span>
+        </div>
+      </footer>
     </div>
   );
 }
+
