@@ -357,9 +357,8 @@ def find_matching_jobs(user_id: str, top_k: int = 15) -> list[str]:
             include=["embeddings"],
         )
 
-        # ── LAZY EMBEDDING FALLBACK ───────────────────────────────────────
         # If no embeddings exist, try embedding the raw text from MongoDB once
-        if not user_data["embeddings"]:
+        if user_data["embeddings"] is None or len(user_data["embeddings"]) == 0:
             logger.info(f"No embeddings found for user '{user_id}' — attempting lazy embedding...")
             from db.mongodb import get_resume
             resume_doc = get_resume(user_id)
@@ -372,7 +371,7 @@ def find_matching_jobs(user_id: str, top_k: int = 15) -> list[str]:
                         include=["embeddings"],
                     )
             
-            if not user_data.get("embeddings"):
+            if user_data.get("embeddings") is None or len(user_data["embeddings"]) == 0:
                 logger.warning(f"Lazy embedding failed or no text for user '{user_id}'")
                 return []
 

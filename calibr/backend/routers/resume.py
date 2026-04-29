@@ -65,6 +65,8 @@ class ResumeMetadataResponse(BaseModel):
     skill_count : int
     skills      : list[str]
     uploaded_at : datetime | None
+    jd_text     : str | None = None
+    jd_skills   : list[str] = []
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -105,6 +107,14 @@ async def upload_resume(
         500: If any step in the pipeline fails unexpectedly.
     """
     logger.info(f"POST /upload — user='{user_id}', file='{file.filename}'")
+
+    # ── Step 0: Reject invalid User IDs ───────────────────────────────────
+    if not user_id or user_id.lower() in {"null", "undefined", ""}:
+        logger.error(f"Rejected upload: invalid user_id '{user_id}'")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User session is invalid. Please log in again before uploading.",
+        )
 
     # ── Step 1: Validate file extension ───────────────────────────────────
     filename    = file.filename or ""
@@ -335,4 +345,6 @@ async def get_resume_metadata(user_id: str):
         skill_count = len(skills),
         skills      = skills,
         uploaded_at = resume.get("uploaded_at"),
+        jd_text     = resume.get("jd_text"),
+        jd_skills   = resume.get("jd_skills", []),
     )

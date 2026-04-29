@@ -138,6 +138,9 @@ async def get_jobs_for_user_feed(user_id: str):
             job_id = job.get("job_id")
             if job_id in scores_map:
                 job["match_score"] = scores_map[job_id]
+        
+        # Sort explicitly by match_score descending (High percentage first)
+        jobs.sort(key=lambda j: j.get("match_score", 0.0), reverse=True)
     else:
         # Fallback: return the 15 most recently fetched jobs (unranked)
         logger.info(f"No ranked job IDs — falling back to most recent jobs")

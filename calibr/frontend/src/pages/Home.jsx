@@ -3,64 +3,69 @@ import {
   MessageSquare,
   FileText,
   Briefcase,
-  Zap,
   ArrowRight,
   Upload,
   Target,
   TrendingUp,
   Sparkles,
 } from "lucide-react";
+import { motion } from "framer-motion";
 import { useAppStore } from "../store/useAppStore";
 
 /**
- * Feature card definition - Neural Architecture
+ * Feature card definition
  */
 const FEATURE_CARDS = [
   {
     tab        : "chat",
     title      : "AI Career Assistant",
-    description: "Neural-guided mentorship cross-referencing your profile with real-time market fluctuations.",
+    description: "Personalized mentorship that connects your professional background with current market trends.",
     icon       : MessageSquare,
-    color      : "indigo",
-    badge      : "Active Intelligence",
+    badge      : "Smart Assistant",
+    color      : "indigo"
   },
   {
     tab        : "resume",
     title      : "Skill Gap Analysis",
-    description: "Precision mapping of technical trajectory. Reveal mission-critical gaps in seconds.",
+    description: "Clear mapping of your technical expertise to identify specific areas for professional growth.",
     icon       : FileText,
-    color      : "purple",
-    badge      : "Strategy Engine",
+    badge      : "Strategy",
+    color      : "purple"
   },
   {
     tab        : "jobs",
-    title      : "Personalised Feed",
-    description: "Daily opportunities ranked by semantic similarity to your professional footprint.",
+    title      : "Personalized Feed",
+    description: "Highly relevant opportunities matched to your unique skills and career objectives.",
     icon       : Briefcase,
-    color      : "blue",
-    badge      : "Neural Matching",
+    badge      : "Matching",
+    color      : "emerald"
   },
 ];
 
 /**
  * Stat Card - Executive Metrics
  */
-function StatCard({ icon: Icon, label, value, colorClass }) {
+function StatCard({ icon: Icon, label, value, delay }) {
   return (
-    <div className="glass-card px-8 py-6 flex items-center gap-6 border-white/[0.03]">
-      <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-inner ${colorClass} bg-opacity-10 border border-current border-opacity-20`}>
-        <Icon size={22} className="drop-shadow-sm" />
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className="glass-card p-6 flex items-center gap-5 group"
+    >
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/[0.02] border border-white/5 group-hover:border-indigo-500/20 transition-all duration-300">
+        <Icon size={20} className="text-slate-400 group-hover:text-indigo-400" />
       </div>
       <div>
-        <p className="text-4xl font-heading font-black tracking-tighter text-white leading-none">{value}</p>
-        <p className="text-[9px] uppercase tracking-[0.2em] font-black text-slate-500 mt-2">{label}</p>
+        <p className="text-2xl font-semibold tracking-tight text-white leading-none mb-1">{value}</p>
+        <p className="text-[10px] uppercase tracking-wider font-semibold text-slate-500">{label}</p>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
 /**
- * Home Page - The Strategic Control Center
+ * Home Page - The Strategic Command Center
  */
 export default function Home() {
   const { resumeData, jobs, setActiveTab } = useAppStore();
@@ -71,141 +76,172 @@ export default function Home() {
     ? Math.round(Math.max(...jobs.map((j) => j.match_score || 0)))
     : 0;
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.05
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="min-h-full p-8 md:p-16 max-w-7xl mx-auto space-y-20 relative">
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="min-h-full px-8 md:px-12 lg:px-16 py-10 md:py-16 space-y-20 relative noise-bg"
+    >
 
-      {/* ── Hero Segment ── */}
-      <section className="animate-reveal max-w-4xl">
-        <div className="inline-flex items-center gap-3 mb-8 bg-indigo-500/5 border border-indigo-500/10 rounded-full px-4 py-2 hover:bg-indigo-500/10 transition-all cursor-default group">
-          <Sparkles size={14} className="text-indigo-400 group-hover:rotate-12 transition-transform" />
-          <span className="text-[10px] uppercase font-black tracking-[0.3em] text-indigo-400/80">Calibr Neural Framework</span>
-        </div>
+      {/* ── Executive Header ── */}
+      <section className="max-w-6xl relative">
+        <motion.div 
+          variants={itemVariants}
+          className="inline-flex items-center gap-2 mb-6 bg-white/[0.03] border border-white/5 rounded-full px-3 py-1 cursor-default"
+        >
+          <div className="w-1 h-1 rounded-full bg-indigo-500 animate-pulse" />
+          <span className="text-[9px] uppercase font-semibold tracking-wider text-slate-400">Intelligence Active</span>
+        </motion.div>
 
-        <h1 className="font-heading text-5xl md:text-6xl lg:text-7xl font-black text-white leading-[1] tracking-tighter text-balance">
-          Master your{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400 text-glow">
-            Professional Trajectory.
-          </span>
-        </h1>
-        <p className="mt-8 text-slate-400 text-lg md:text-xl max-w-2xl font-medium leading-relaxed text-balance">
-          The autonomous career intelligence engine that maps your unique footprint, reveals strategic gaps, and bridges the distance to your next major role.
-        </p>
+        <motion.h1 
+          variants={itemVariants}
+          className="font-heading text-5xl md:text-7xl font-semibold text-white leading-[1.1] tracking-tight mb-8"
+        >
+          Executive Career <br />
+          <span className="text-indigo-500">Intelligence.</span>
+        </motion.h1>
+        
+        <motion.p 
+          variants={itemVariants}
+          className="text-slate-400 text-lg md:text-xl max-w-2xl font-normal leading-relaxed tracking-tight opacity-80"
+        >
+          Map your professional footprint, identify strategic growth clusters, and surface high-impact opportunities with systemized precision.
+        </motion.p>
       </section>
 
-      {/* ── Profile Synchronisation (Conditional Banner) ── */}
+      {/* ── Profile Initialization ── */}
       {!resumeData && (
-        <div className="animate-reveal stagger-1 flex flex-col md:flex-row items-center justify-between gap-8 p-10 rounded-[32px] bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent border border-white/5 shadow-2xl relative overflow-hidden group">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/5 blur-[100px] rounded-full group-hover:bg-indigo-500/10 transition-all duration-700"></div>
-          
-          <div className="flex items-center gap-6 relative z-10 text-center md:text-left">
-            <div className="w-16 h-16 rounded-[20px] bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 group-hover:scale-105 transition-transform shadow-xl">
-              <Upload size={28} className="text-indigo-400" />
+        <motion.div 
+          variants={itemVariants}
+          className="flex flex-col md:flex-row items-center justify-between gap-8 p-8 rounded-2xl bg-white/[0.02] border border-white/5 shadow-sm relative overflow-hidden group"
+        >
+          <div className="flex items-center gap-6 relative z-10">
+            <div className="w-14 h-14 rounded-xl bg-indigo-600/10 flex items-center justify-center border border-indigo-600/20">
+              <Upload size={24} className="text-indigo-400" />
             </div>
             <div>
-              <h3 className="font-black text-white text-xl tracking-tight leading-none mb-2">
-                Initialise Profile Intelligence
+              <h3 className="font-semibold text-white text-xl tracking-tight mb-1">
+                Synchronize Profile
               </h3>
-              <p className="text-sm text-slate-500 font-medium">
-                Upload your professional footprint to activate the neural matching engine.
+              <p className="text-sm text-slate-500 font-medium tracking-tight">
+                Upload your professional summary to initialize the intelligence engine.
               </p>
             </div>
           </div>
           
           <button
             onClick={() => setActiveTab("resume")}
-            className="btn-primary px-10 relative z-10 w-full md:w-auto"
+            className="btn-primary px-8 py-3 text-[13px] relative z-10 w-full md:w-auto"
           >
-            Start Strategy
-            <ArrowRight size={18} />
+            Get Started
+            <ArrowRight size={16} />
           </button>
-        </div>
+        </motion.div>
       )}
 
-      {/* ── Intelligence Metrics (Conditional Row) ── */}
+      {/* ── Core Metrics ── */}
       {resumeData && (
-        <div className="animate-reveal stagger-1 grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatCard
             icon={Target}
-            label="Verified Competencies"
+            label="Verified Skills"
             value={skillCount}
-            colorClass="text-indigo-400"
+            delay={0.1}
           />
           <StatCard
             icon={Briefcase}
-            label="Ranked Opportunities"
+            label="Market Match"
             value={jobCount}
-            colorClass="text-blue-400"
+            delay={0.2}
           />
           <StatCard
             icon={TrendingUp}
-            label="Semantic Match Power"
+            label="Strategic Fit"
             value={`${topScore}%`}
-            colorClass="text-purple-400"
+            delay={0.3}
           />
         </div>
       )}
 
-      {/* ── Intelligence Modules ── */}
+      {/* ── Strategic Modules ── */}
       <section className="space-y-10">
-        <div className="flex items-center gap-4">
-          <h3 className="text-[10px] uppercase tracking-[0.4em] font-black text-slate-700">
-            STRATEGIC MODULES
+        <motion.div 
+          variants={itemVariants}
+          className="flex items-center gap-4"
+        >
+          <h3 className="text-[10px] uppercase tracking-widest font-semibold text-slate-600">
+            SYSTEM MODULES
           </h3>
-          <div className="h-px flex-1 bg-white/[0.03]"></div>
-        </div>
+          <div className="h-px flex-1 bg-white/[0.05]"></div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {FEATURE_CARDS.map((card, i) => {
             const Icon = card.icon;
             return (
-              <button
+              <motion.button
+                variants={itemVariants}
                 key={card.tab}
                 onClick={() => setActiveTab(card.tab)}
-                className="glass-card p-10 text-left group relative flex flex-col h-full animate-reveal"
-                style={{ animationDelay: `${(i + 2) * 100}ms` }}
+                className="glass-card p-8 text-left group relative flex flex-col h-full overflow-hidden"
               >
-                {/* Visual Flair */}
-                <div className="absolute top-0 right-0 p-6 opacity-0 group-hover:opacity-100 transition-opacity">
-                   <ArrowRight size={16} className="text-indigo-400 -rotate-45" />
+                <div className="w-12 h-12 rounded-xl bg-white/[0.03] flex items-center justify-center mb-6 border border-white/5 transition-all duration-300 group-hover:border-indigo-500/30">
+                  <Icon size={20} className="text-slate-400 group-hover:text-indigo-400 transition-colors" />
                 </div>
 
-                <div className={`w-14 h-14 rounded-2xl bg-indigo-500 bg-opacity-10 flex items-center justify-center mb-8 border border-white/5 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-500`}>
-                  <Icon size={24} className="text-white drop-shadow-md" />
-                </div>
-
-                <span className="text-[9px] font-black text-indigo-500/60 uppercase tracking-[0.3em] mb-3">
+                <span className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-2 group-hover:text-indigo-400/60 transition-colors">
                   {card.badge}
                 </span>
 
-                <h2 className="font-heading font-black text-white text-2xl mb-4 leading-tight tracking-tight">
+                <h2 className="font-heading font-semibold text-white text-xl mb-3 tracking-tight">
                   {card.title}
                 </h2>
 
-                <p className="text-sm text-slate-500 leading-relaxed font-medium mb-10 flex-1">
+                <p className="text-[13.5px] text-slate-500 leading-relaxed font-medium mb-8 flex-1 tracking-tight">
                   {card.description}
                 </p>
 
-                <div className="pt-6 border-t border-white/[0.03] flex items-center justify-between group-hover:border-indigo-500/20 transition-all">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 group-hover:text-indigo-400 transition-colors">Launch Implementation</span>
-                  <div className="w-1.5 h-1.5 rounded-full bg-slate-800 group-hover:bg-indigo-400 transition-all shadow-[0_0_8px_transparent] group-hover:shadow-indigo-400/50"></div>
+                <div className="pt-4 border-t border-white/[0.05] flex items-center justify-between group-hover:border-indigo-500/10 transition-all">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-600 group-hover:text-indigo-400 transition-colors">Initialize</span>
+                  <ArrowRight size={14} className="text-slate-700 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
                 </div>
-              </button>
+              </motion.button>
             );
           })}
         </div>
       </section>
 
-      {/* ── Architectural Footer ── */}
-      <footer className="pt-10 border-t border-white/[0.03] flex flex-col md:flex-row items-center justify-between gap-6 opacity-40 hover:opacity-100 transition-opacity duration-700">
-        <p className="text-[9px] uppercase tracking-[0.4em] font-black text-slate-600">
-          Executive Environment: G-1.5 · E-004 · FAISS Vector Space
+      {/* ── System Footer ── */}
+      <motion.footer 
+        variants={itemVariants}
+        className="pt-10 border-t border-white/[0.03] flex flex-col md:flex-row items-center justify-between gap-6 opacity-40"
+      >
+        <p className="text-[9px] uppercase tracking-widest font-semibold text-slate-600">
+          Corporate Intelligence Platform • v1.2.0
         </p>
         <div className="flex gap-8">
-           <span className="text-[9px] font-black text-slate-700 tracking-widest uppercase">Encryption: AES-256</span>
-           <span className="text-[9px] font-black text-slate-700 tracking-widest uppercase">Status: Live Sync</span>
+           <span className="text-[9px] font-semibold text-slate-600 tracking-wider uppercase">Secure Core</span>
+           <span className="text-[9px] font-semibold text-slate-600 tracking-wider uppercase">Neural Audit Logs</span>
         </div>
-      </footer>
-    </div>
+      </motion.footer>
+    </motion.div>
   );
 }
+
 

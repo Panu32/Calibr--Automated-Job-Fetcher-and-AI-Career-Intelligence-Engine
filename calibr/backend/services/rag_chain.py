@@ -68,10 +68,16 @@ async def chat_with_resume_stream(
         # ── Step 1: Thinking / Context Retrieval ───────────────────────────
         yield "data: THINKING: Consulting your resume and market data...\n\n"
         
-        # Load history (async wrapper around sync MongoDB call)
+        # Fetch history and RAG context in parallel
         import asyncio
         loop = asyncio.get_event_loop()
-        history_docs = await loop.run_in_executor(None, get_chat_history, user_id, 10)
+        
+        # Start both tasks concurrently
+        history_task = loop.run_in_executor(None, get_chat_history, user_id, 10)
+        context_task = loop.run_in_executor(None, get_rag_context, user_id, question)
+        
+        # Wait for both to complete
+        history_docs, rag_context = await asyncio.gather(history_task, context_task)
 
         # Format history
         if history_docs:
@@ -82,9 +88,6 @@ async def chat_with_resume_stream(
             chat_history_str = "\n".join(history_lines)
         else:
             chat_history_str = "No previous messages."
-
-        # Get RAG context (async wrapper)
-        rag_context = await loop.run_in_executor(None, get_rag_context, user_id, question)
 
         if "Quota Reached" in rag_context or "Resource Exhausted" in rag_context:
              yield f"data: ERROR: {rag_context}\n\n"
@@ -223,64 +226,71 @@ def get_rag_context(user_id: str, question: str) -> str:
 
         context_parts = []
 
-        # ── Step 2: Query Jobs Collection ──────────────────────────────────
-        jobs_collection = get_or_create_collection("jobs")
-        if jobs_collection.count() > 0:
-            job_results = jobs_collection.query(
+        # ── Step 2 & 3: Query Collections in Parallel ─────────────────────
+        def query_jobs():
+            jobs_coll = get_or_create_collection("jobs")
+            if jobs_coll.count() == 0: return None
+            return jobs_coll.query(
                 query_embeddings=[question_vector],
                 n_results=3,
                 include=["documents", "metadatas", "distances"],
             )
-            
-            job_docs = job_results.get("documents", [[]])[0]
-            job_dists = job_results.get("distances", [[]])[0]
-            
-            relevant_jobs = [doc for doc, dist in zip(job_docs, job_dists) if dist < 0.8]
-            if relevant_jobs:
-                jobs_str = "\n".join([f"  - {doc[:300]}..." for doc in relevant_jobs])
-                context_parts.append(f"━━━━━━━━ Relevant Job Context ━━━━━━━━\n{jobs_str}")
 
-        # ── Step 3: Query Tech News Collection (Market Intelligence) ────────
-        news_collection = get_or_create_collection("tech_news")
-        if news_collection.count() > 0:
-            # A) Semantic Query (Standard RAG)
-            news_results = news_collection.query(
+        def query_news():
+            news_coll = get_or_create_collection("tech_news")
+            if news_coll.count() == 0: return None
+            
+            # Semantic search
+            semantic_results = news_coll.query(
                 query_embeddings=[question_vector],
                 n_results=5, 
                 include=["documents", "metadatas", "distances"],
             )
             
-            news_docs = news_results.get("documents", [[]])[0]
-            news_metas = news_results.get("metadatas", [[]])[0]
-            news_dists = news_results.get("distances", [[]])[0]
+            # Hybrid (latest) if needed
+            news_keywords = ["news", "latest", "today", "yesterday", "update", "current", "trend"]
+            is_news_query = any(k in question.lower() for k in news_keywords)
+            latest_results = news_coll.peek(limit=10) if is_news_query else None
             
-            # We are slightly more lenient with news distance (0.9) to allow broader matches
+            return {"semantic": semantic_results, "latest": latest_results}
+
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            jobs_future = executor.submit(query_jobs)
+            news_future = executor.submit(query_news)
+            
+            job_results = jobs_future.result()
+            news_data = news_future.result()
+
+        # ── Step 4: Process Results ────────────────────────────────────────
+        if job_results:
+            job_docs = job_results.get("documents", [[]])[0]
+            job_dists = job_results.get("distances", [[]])[0]
+            relevant_jobs = [doc for doc, dist in zip(job_docs, job_dists) if dist < 0.8]
+            if relevant_jobs:
+                jobs_str = "\n".join([f"  - {doc[:300]}..." for doc in relevant_jobs])
+                context_parts.append(f"━━━━━━━━ Relevant Job Context ━━━━━━━━\n{jobs_str}")
+
+        if news_data:
+            semantic = news_data["semantic"]
+            latest = news_data["latest"]
+            
+            news_docs = semantic.get("documents", [[]])[0]
+            news_metas = semantic.get("metadatas", [[]])[0]
+            news_dists = semantic.get("distances", [[]])[0]
+            
             relevant_news = [
                 (doc, meta) for doc, meta, dist in zip(news_docs, news_metas, news_dists) if dist < 0.9
             ]
             
-            # B) Hybrid Retrieval: If user asks for "news", "latest", "today", etc.
-            #    We also pull the ABSOLUTE LATEST 3 items from the DB regardless of semantic score.
-            news_keywords = ["news", "latest", "today", "yesterday", "update", "current", "trend"]
-            is_news_query = any(k in question.lower() for k in news_keywords)
-            
             latest_news = []
-            if is_news_query:
-                # We fetch 10 items and pick the ones not already in relevant_news
-                recent_results = news_collection.peek(limit=10)
-                recent_docs = recent_results.get("documents", [])
-                recent_metas = recent_results.get("metadatas", [])
-                
-                # Deduplicate against semantic results
+            if latest:
                 seen_urls = {m.get("url") for d, m in relevant_news}
-                for d, m in zip(recent_docs, recent_metas):
+                for d, m in zip(latest.get("documents", []), latest.get("metadatas", [])):
                     if m.get("url") not in seen_urls and len(latest_news) < 3:
                         latest_news.append((d, m))
                         seen_urls.add(m.get("url"))
 
-            # Combine results
             final_news = relevant_news + latest_news
-            
             if final_news:
                 lines = [f"  - [{m.get('source', 'Web')}] {d[:400]}..." for d, m in final_news]
                 news_str = "\n".join(lines)

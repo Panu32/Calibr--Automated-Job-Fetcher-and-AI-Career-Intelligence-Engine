@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useMemo } from "react";
 import { AlertCircle, X, Zap, ChevronRight, User } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 // ── Global store ───────────────────────────────────────────────────────────
 import { useAppStore } from "./store/useAppStore";
@@ -27,7 +28,13 @@ const PAGES = {
  * App.jsx - Executive Intelligence Suite
  */
 export default function App() {
-  const { activeTab, error, clearError, token, user } = useAppStore();
+  const { activeTab, error, clearError, token, user, fetchInitialData } = useAppStore();
+
+  useEffect(() => {
+    if (token && user) {
+      fetchInitialData();
+    }
+  }, [token, user, fetchInitialData]);
   const [authMode, setAuthMode] = React.useState("login");
 
   // Determine active component
@@ -54,46 +61,71 @@ export default function App() {
 
   // Auth Guard
   if (!token) {
-    return authMode === "login" 
-      ? <Login onToggleMode={() => setAuthMode("signup")} /> 
-      : <Signup onToggleMode={() => setAuthMode("login")} />;
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div 
+          key={authMode}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="h-full"
+        >
+          {authMode === "login" 
+            ? <Login onToggleMode={() => setAuthMode("signup")} /> 
+            : <Signup onToggleMode={() => setAuthMode("login")} />}
+        </motion.div>
+      </AnimatePresence>
+    );
   }
 
   return (
-    <div className="flex h-screen bg-slate-950 text-slate-200 selection:bg-indigo-500/20 selection:text-white overflow-hidden">
+    <div className="flex h-screen bg-slate-950 text-slate-200 selection:bg-indigo-500/30 selection:text-white overflow-hidden font-sans noise-bg">
       
       {/* ── Fixed Persistent Sidebar ── */}
       <Sidebar />
 
       {/* ── Main Application Canvas ── */}
-      <main className="flex-1 flex flex-col min-w-0 bg-[#020617] relative">
+      <main className="flex-1 flex flex-col min-w-0 bg-transparent relative overflow-hidden">
         
-        {/* Subtle Ambient Glows */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none -z-10 translate-x-1/3 -translate-y-1/3"></div>
-        <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-purple-500/5 blur-[100px] rounded-full pointer-events-none -z-10 -translate-x-1/4 translate-y-1/4"></div>
+        {/* Animated Ambient Background (Restrained) */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.1, 1],
+              opacity: [0.1, 0.15, 0.1]
+            }}
+            transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+            className="absolute top-[-20%] right-[-10%] w-[1000px] h-[1000px] bg-indigo-600/20 blur-[160px] rounded-full"
+          />
+        </div>
 
         {/* ── Global Header (Integrated) ── */}
-        <header className="h-16 flex-shrink-0 flex items-center justify-between px-8 border-b border-white/[0.03] bg-slate-950/20 backdrop-blur-3xl z-40">
-           <div className="flex items-center gap-2 animate-fade-in" key={activeTab}>
-             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-400/80">{pageMeta.subtitle}</span>
-             <ChevronRight size={10} className="text-white/20" />
-             <h2 className="text-sm font-bold text-white tracking-tight">{pageMeta.title}</h2>
+        <header className="h-20 flex-shrink-0 flex items-center justify-between px-8 md:px-12 lg:px-16 border-b border-white/[0.04] bg-slate-950/40 backdrop-blur-xl z-40">
+           <div className="flex items-center gap-3">
+             <div className="flex flex-col">
+               <span className="text-[9px] font-semibold uppercase tracking-widest text-indigo-400 mb-0.5 opacity-80">{pageMeta.subtitle}</span>
+               <div className="flex items-center gap-2">
+                 <h2 className="text-xl font-semibold text-white tracking-tight leading-none">{pageMeta.title}</h2>
+               </div>
+             </div>
            </div>
 
            <div className="flex items-center gap-6">
               {/* Status Indicator */}
-              <div className="hidden md:flex items-center gap-2.5 px-3 py-1.5 rounded-full bg-emerald-500/5 border border-emerald-500/10">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-glow-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]"></div>
-                <span className="text-[9px] font-black uppercase tracking-widest text-emerald-400">System Ready</span>
+              <div className="hidden lg:flex items-center gap-2.5 px-3 py-1.5 rounded-md bg-white/[0.02] border border-white/5">
+                <div className="w-1 h-1 rounded-full bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]"></div>
+                <span className="text-[9px] font-semibold uppercase tracking-widest text-slate-500">System Latency: 24ms</span>
               </div>
 
-              {/* Minimalist User Info */}
-              <div className="flex items-center gap-3 pl-6 border-l border-white/[0.05]">
+              {/* User Profile */}
+              <div className="flex items-center gap-4 pl-6 border-l border-white/[0.05]">
                 <div className="text-right hidden sm:block">
-                  <p className="text-[10px] font-black text-white leading-none uppercase tracking-wider">{user?.full_name?.split(' ')[0] || 'Executive'}</p>
+                  <p className="text-[11px] font-semibold text-white leading-none uppercase tracking-widest mb-1">{user?.full_name || 'Executive'}</p>
+                  <p className="text-[9px] font-medium text-slate-600 uppercase tracking-tighter">Enterprise Access</p>
                 </div>
-                <div className="w-8 h-8 rounded-lg bg-white/[0.03] border border-white/[0.05] flex items-center justify-center text-slate-400 hover:text-white hover:border-white/10 transition-all cursor-pointer">
-                  <User size={14} />
+                <div className="w-9 h-9 rounded-lg bg-indigo-600/10 border border-indigo-600/20 flex items-center justify-center text-indigo-400">
+                  <User size={16} />
                 </div>
               </div>
            </div>
@@ -101,31 +133,48 @@ export default function App() {
 
         {/* ── Dynamic Content Screen ── */}
         <div className="flex-1 overflow-y-auto no-scrollbar relative z-30">
-          <div key={activeTab} className="animate-reveal h-full">
-            <ActiveContent />
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div 
+              key={activeTab}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+              className="h-full"
+            >
+              <ActiveContent />
+            </motion.div>
+          </AnimatePresence>
         </div>
       </main>
 
       {/* ── Global Precision Toast ── */}
-      {error && (
-        <div className="fixed bottom-6 right-6 z-[100] max-w-sm w-full animate-reveal select-none">
-          <div className="p-4 rounded-2xl bg-[#0a0505]/95 border border-red-500/20 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-start gap-4">
-            <div className="w-8 h-8 rounded-lg bg-red-500/10 flex items-center justify-center flex-shrink-0">
-               <AlertCircle size={16} className="text-red-400" />
+      <AnimatePresence>
+        {error && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            className="fixed bottom-6 right-6 z-[100] max-w-sm w-full"
+          >
+            <div className="p-4 rounded-xl bg-slate-900 border border-white/10 backdrop-blur-2xl shadow-2xl flex items-start gap-3">
+              <div className="w-8 h-8 rounded-lg bg-rose-500/10 flex items-center justify-center shrink-0">
+                 <AlertCircle size={16} className="text-rose-400" />
+              </div>
+              <div className="flex-1 pt-0.5">
+                <h4 className="text-[9px] font-bold uppercase tracking-widest text-slate-500 mb-1">Process Error</h4>
+                <p className="text-[12px] font-normal text-slate-300 leading-snug">{error}</p>
+              </div>
+              <button 
+                onClick={clearError}
+                className="text-slate-600 hover:text-white transition-colors"
+              >
+                <X size={14} />
+              </button>
             </div>
-            <div className="flex-1 pt-0.5">
-              <p className="text-xs font-bold text-red-100/90 leading-relaxed">{error}</p>
-            </div>
-            <button 
-              onClick={clearError}
-              className="w-6 h-6 rounded-md hover:bg-white/5 flex items-center justify-center text-red-400/50 hover:text-red-400 transition-all"
-            >
-              <X size={14} />
-            </button>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

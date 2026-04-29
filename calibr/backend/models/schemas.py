@@ -247,6 +247,10 @@ class UserLogin(BaseModel):
     email: str = Field(..., pattern=r"^\S+@\S+\.\S+$")
     password: str = Field(...)
 
+class GoogleLogin(BaseModel):
+    """Data required for Google OAuth login."""
+    token: str = Field(..., description="Google ID Token from frontend")
+
 class UserResponse(BaseModel):
     """Public user profile data returned to the frontend."""
     id: str = Field(..., alias="_id") # MongoDB ObjectId as string

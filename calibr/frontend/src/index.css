@@ -1,204 +1,187 @@
 /*
  * src/index.css
  * ─────────────────────────────────────────────────────────────────────────
- * Calibr – Global Design System (Executive Intelligence Edition)
+ * Calibr – Executive Intelligence Design System (Claude-Inspired)
  * 
  * DESIGN PHILOSOPHY:
- * 1. Claude-Level Sophistication: Clean lines, purposeful whitespace.
- * 2. HSL-First Architecture: Dynamic transparency and luminosity control.
- * 3. Layered Glassmorphism: Refined depth with multi-step shadows.
- * 4. Human-Centric Typography: Optimized for readability and authority.
+ * 1. Minimalist Precision: Airy whitespace, purposeful typography.
+ * 2. Subtle Layering: Background shifts instead of heavy borders.
+ * 3. Human-Centric: Professional tones, approachable interactions.
  * ─────────────────────────────────────────────────────────────────────────
  */
 
-/* ── Tailwind CSS layers ──────────────────────────────────────────────── */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* ── Design tokens as CSS custom properties ───────────────────────────── */
 :root {
   /* 
-   * Brand: "Intelligence Indigo"
-   * A refined, less saturated indigo that feels professional and tech-forward.
+   * Brand: "Executive Indigo" - Deep, purposeful, non-generic
    */
-  --brand-h: 235;
+  --brand-h: 245;
   --brand-s: 75%;
-  --brand-l: 65%;
+  --brand-l: 55%;
   
   --color-brand-primary   : hsl(var(--brand-h), var(--brand-s), var(--brand-l));
-  --color-brand-muted     : hsl(var(--brand-h), var(--brand-s), 25%);
-  --color-brand-accent    : #38bdf8;
+  --color-brand-muted     : hsla(var(--brand-h), var(--brand-s), 25%, 0.1);
+  --color-brand-accent    : #6366f1;
   
   /* 
-   * Surface: "Executive Slate"
-   * Deep, neutral slates that provide a luxury foundation.
+   * Surface: "Executive Slate" 
+   * Deepest charcoal with ultra-subtle blue undertones.
    */
-  --color-surface-base    : #020617;   /* Slate 950 */
-  --color-surface-raised  : #0a0f1e;   /* Custom dark */
-  --color-surface-overlay : #111827;   /* Slate 900 */
+  --color-surface-base    : #020617;   /* Ultra dark */
+  --color-surface-raised  : #0f172a;
+  --color-surface-overlay : #1e293b;
   --color-border-subtle   : rgba(255, 255, 255, 0.04);
-  --color-border-glow     : rgba(99, 102, 241, 0.15);
+  --color-border-hover    : rgba(255, 255, 255, 0.1);
+  --color-glow            : rgba(99, 102, 241, 0.1);
 
-  /* Typography */
+  /* Typography - Professional Pairs */
   --font-body      : "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   --font-heading   : "Plus Jakarta Sans", "Inter", sans-serif;
 
   /* Spacing & Radius */
-  --radius-sm : 8px;
+  --radius-sm : 6px;
   --radius-md : 12px;
-  --radius-lg : 20px;
-  --radius-xl : 32px;
+  --radius-lg : 16px;
+  --radius-xl : 24px;
 }
 
-/* ── Base element styles ──────────────────────────────────────────────── */
 @layer base {
   html, body, #root {
     @apply h-full overflow-hidden;
     background-color: var(--color-surface-base);
-    color           : #f1f5f9; /* Slate 100 */
+    color           : #cbd5e1; /* Slate 300 */
     font-family     : var(--font-body);
     -webkit-font-smoothing : antialiased;
-    -moz-osx-font-smoothing: grayscale;
     line-height: 1.6;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight;
+    @apply font-semibold tracking-tight;
     font-family: var(--font-heading);
-    color: #ffffff;
+    color: #f8fafc;
     line-height: 1.1;
   }
 
   ::selection {
-    background: hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.2);
+    background: hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.3);
     color: #fff;
   }
 }
 
-/* ── Reusable component utilities ─────────────────────────────────────── */
 @layer components {
+  /* Premium Noise Background */
+  .noise-bg {
+    position: relative;
+  }
+  .noise-bg::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    opacity: 0.03;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  }
 
-  /* Modern Executive Glass */
+  /* Precision Glass Cards */
   .glass-card {
-    background: rgba(10, 15, 30, 0.4);
-    backdrop-filter: blur(12px) saturate(180%);
-    border: 1px solid var(--color-border-subtle);
-    box-shadow: 
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -1px rgba(0, 0, 0, 0.06),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.02);
+    background: rgba(15, 23, 42, 0.4);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.05);
     border-radius: var(--radius-lg);
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.4s cubic-bezier(0.2, 0, 0, 1);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 
   .glass-card:hover {
-    background: rgba(15, 22, 42, 0.5);
-    border-color: rgba(99, 102, 241, 0.12);
-    box-shadow: 
-      0 20px 25px -5px rgba(0, 0, 0, 0.2),
-      0 0 0 1px rgba(99, 102, 241, 0.05);
+    background: rgba(30, 41, 59, 0.5);
+    border-color: rgba(255, 255, 255, 0.1);
     transform: translateY(-2px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   }
 
-  /* Precision Button System */
+  .glass-panel {
+    background: rgba(2, 6, 23, 0.7);
+    backdrop-filter: blur(40px);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+  }
+
+  /* Professional Button System */
   .btn-primary {
-    @apply px-6 py-3 rounded-xl font-bold text-sm text-white
-           transition-all duration-300 active:scale-[0.97] flex items-center justify-center gap-2.5;
-    background: linear-gradient(180deg, hsl(var(--brand-h), var(--brand-s), 55%) 0%, hsl(var(--brand-h), var(--brand-s), 45%) 100%);
+    @apply px-6 py-2.5 rounded-lg font-medium text-[13px] text-white
+           transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2
+           relative overflow-hidden shadow-sm;
+    background: var(--color-brand-primary);
     border: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 
-      0 1px 2px rgba(0, 0, 0, 0.1),
-      0 4px 12px -2px hsla(var(--brand-h), var(--brand-s), 40%, 0.3),
-      inset 0 1px 0 0 rgba(255, 255, 255, 0.1);
   }
   
   .btn-primary:hover {
     filter: brightness(1.1);
-    box-shadow: 
-      0 8px 20px -4px hsla(var(--brand-h), var(--brand-s), 40%, 0.4);
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
+  }
+
+  .btn-secondary {
+    @apply px-6 py-2.5 rounded-lg font-medium text-[13px] text-slate-300
+           bg-white/[0.03] border border-white/10 transition-all duration-200
+           hover:bg-white/[0.06] hover:text-white hover:border-white/20;
   }
 
   .btn-ghost {
-    @apply px-5 py-3 rounded-xl font-semibold text-sm
-           bg-white/[0.02] border border-white/[0.04] text-slate-400
-           hover:bg-white/[0.06] hover:text-white hover:border-white/[0.1]
-           transition-all duration-300 active:scale-[0.97];
+    @apply px-4 py-2 rounded-lg font-medium text-[13px]
+           text-slate-400 hover:text-slate-100 hover:bg-white/[0.03]
+           transition-all duration-200;
   }
 
-  /* Interactive Navigation */
+  /* Minimalist Navigation */
   .nav-item {
-    @apply flex items-center gap-3.5 px-4 py-3 rounded-xl
-           text-slate-500 text-sm font-semibold
-           cursor-pointer transition-all duration-300
-           hover:bg-white/[0.02] hover:text-slate-200;
+    @apply flex items-center gap-3 px-3 py-2 rounded-lg
+           text-slate-500 text-[13px] font-medium
+           cursor-pointer transition-all duration-200
+           hover:text-slate-200;
   }
   
   .nav-item.active {
-    @apply text-white;
-    background: hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.08);
-    box-shadow: inset 0 0 0 1px hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.1);
+    @apply text-white bg-white/[0.04] border border-white/[0.06];
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   }
 
   .input-field {
-    @apply w-full px-5 py-3.5 rounded-xl text-sm
-           bg-slate-900/40 backdrop-blur-sm
-           border border-white/5 text-white
-           placeholder-slate-600
-           focus:outline-none focus:border-indigo-500/30 focus:ring-4 focus:ring-indigo-500/5
-           transition-all duration-500;
+    @apply w-full px-4 py-3 rounded-xl text-[14px]
+           bg-slate-950/50 border border-white/5 text-slate-100
+           placeholder-slate-600 focus:outline-none focus:border-indigo-500/30
+           focus:ring-2 focus:ring-indigo-500/5 transition-all;
   }
 
   .skill-tag {
-    @apply px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-wider
-           bg-indigo-500/5 text-indigo-300 border border-indigo-500/10;
+    @apply px-2.5 py-1 rounded-md text-[11px] font-semibold
+           bg-indigo-500/10 text-indigo-300 border border-indigo-500/20;
   }
 }
 
-/* ── Premium Scrollbar ────────────────────────────────────────── */
+/* Premium Scrollbar */
 ::-webkit-scrollbar        { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track  { background: transparent; }
 ::-webkit-scrollbar-thumb  {
   background     : #1e293b;
-  border-radius  : 20px;
+  border-radius  : 10px;
 }
 ::-webkit-scrollbar-thumb:hover { background: #334155; }
 
-/* ── Refined Motion Suite ────────────────────────────────────────────────── */
-@keyframes slideUpFade {
-  from { opacity: 0; transform: translateY(16px); }
+/* Motion Suites */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-@keyframes slowPulse {
-  0%, 100% { opacity: 0.4; }
-  50% { opacity: 0.8; }
-}
-
-.animate-reveal { 
-  animation: slideUpFade 0.6s cubic-bezier(0.16, 1, 0.3, 1) both; 
-}
-
 .animate-fade-in { 
-  animation: fadeIn 0.4s ease-out both; 
+  animation: fadeIn 0.4s cubic-bezier(0.2, 0, 0, 1) both; 
 }
 
-.animate-glow-pulse {
-  animation: slowPulse 3s ease-in-out infinite;
-}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Staggered load effects */
-.stagger-1 { animation-delay: 80ms; }
-.stagger-2 { animation-delay: 160ms; }
-.stagger-3 { animation-delay: 240ms; }
 
-/* ── Custom Utilities ───────────────────────────────────────────────────── */
-.text-balance { text-wrap: balance; }
-.text-glow { text-shadow: 0 0 20px hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.3); }
-.border-glow { box-shadow: 0 0 0 1px hsla(var(--brand-h), var(--brand-s), var(--brand-l), 0.1); }
 

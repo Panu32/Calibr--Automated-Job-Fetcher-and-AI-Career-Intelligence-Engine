@@ -95,6 +95,16 @@ export const login = async (data) => {
   return response.data;
 };
 
+/**
+ * Authenticate a user with Google OAuth2.
+ * @param {string} token - Google ID Token
+ * @returns {Promise<Object>} { access_token, token_type, user }
+ */
+export const loginWithGoogle = async (token) => {
+  const response = await api.post("/auth/google", { token });
+  return response.data;
+};
+
 
 // ──────────────────────────────────────────────────────────────────────────
 //  RESUME endpoints

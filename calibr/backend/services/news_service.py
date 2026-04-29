@@ -34,6 +34,7 @@ SOURCES = {
     "dev_to"     : "https://dev.to/api/articles?per_page=10&top=1",
 }
 
+
 def fetch_hacker_news() -> list[dict]:
     """Fetch latest stories from Hacker News via Algolia API."""
     try:
@@ -139,6 +140,7 @@ def sync_market_intelligence() -> int:
         for item in unique_news:
             # Create a rich text representation for embedding
             combined_text = f"{item['title']}. {item['summary']}".strip()
+            logger.info(f"→ Embedding News: {item['title'][:60]}...")
             
             # Generate a "safe" ID using URL hash or timestamp
             item_id = str(hash(item['url']))

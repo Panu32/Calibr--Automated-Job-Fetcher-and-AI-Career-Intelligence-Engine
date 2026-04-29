@@ -12,6 +12,7 @@
  */
 
 import { create } from "zustand";
+import { getResume, getChatHistory } from "../services/api";
 
 export const useAppStore = create((set, get) => ({
   // ── Authentication ───────────────────────────────────────────────────────
@@ -131,4 +132,45 @@ export const useAppStore = create((set, get) => ({
 
   clearError: () =>
     set({ error: null }),
+
+  /**
+   * Fetch initial resume and JD metadata from the backend.
+   * This ensures state persists across page refreshes.
+   */
+  fetchInitialData: async () => {
+    const { user, setResumeData, setJdData, setChatHistory } = get();
+    if (!user) return;
+
+    try {
+      const userId = user._id || user.id;
+      
+      // Fetch Resume & Chat History in parallel for speed
+      const [resumeData, chatData] = await Promise.all([
+        getResume(userId).catch(() => null),
+        getChatHistory(userId).catch(() => ({ messages: [] }))
+      ]);
+      
+      // Update Resume metadata
+      if (resumeData) {
+        setResumeData(resumeData);
+        
+        // Update JD data if it exists in the fetched metadata
+        if (resumeData.jd_text) {
+          setJdData({
+            jd_text: resumeData.jd_text,
+            parsed_skills: resumeData.jd_skills || [],
+            skill_count: (resumeData.jd_skills || []).length
+          });
+        }
+      }
+
+      // Update Chat History
+      if (chatData && chatData.messages) {
+        setChatHistory(chatData.messages);
+      }
+
+    } catch (err) {
+      console.info("Info: No initial data found or connection issue.", err.message);
+    }
+  },
 }));

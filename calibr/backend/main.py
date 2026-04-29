@@ -50,7 +50,7 @@ load_dotenv()  # reads .env in the current working directory into os.environ
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Step 2 – Configure logging
+#  Step 2 – Configure logging 
 #  Using Python's built-in logger so we get timestamped output in the console.
 # ─────────────────────────────────────────────────────────────────────────────
 logging.basicConfig(

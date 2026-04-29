@@ -41,6 +41,7 @@ pydantic-settings>=2.3.1      # for reading .env into settings model
 # --- Authentication & hashing ---
 passlib[bcrypt]==1.7.4        # secure user password hashing
 PyJWT==2.8.0                  # JWT generation and validation
+google-auth==2.30.0           # Google OAuth2 token verification
 
 # --- Background scheduler ---
 apscheduler==3.10.4           # daily job-fetch cron at 7 AM
