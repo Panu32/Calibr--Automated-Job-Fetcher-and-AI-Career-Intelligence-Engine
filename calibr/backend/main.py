@@ -153,7 +153,8 @@ app = FastAPI(
 import os
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[os.getenv("FRONTEND_URL", "*")], # Allow deployed frontend or wildcard
+    allow_origins=[os.getenv("FRONTEND_URL", "http://localhost:5173")], # Exact origins
+    allow_origin_regex=r"https://.*\.vercel\.app", # Allow any Vercel deployment
     allow_credentials=True,                    # allow cookies / auth headers
     allow_methods=["*"],                       # GET, POST, PUT, DELETE, etc.
     allow_headers=["*"],                       # all request headers allowed
