@@ -27,8 +27,8 @@ import chromadb
 from chromadb import EmbeddingFunction, Embeddings   # base class for custom embed fn
 from chromadb.config import Settings                  # persistent storage config
 
-# ── Third-party: Ollama embeddings via LangChain ───────────────────────────────
-from langchain_ollama import OllamaEmbeddings
+# ── Third-party: Google GenAI Embeddings ───────────────────────────────────────
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
 # ── Module-level logger ───────────────────────────────────────────────────────
 logger = logging.getLogger("calibr.embedder")
@@ -37,21 +37,21 @@ logger = logging.getLogger("calibr.embedder")
 # ─────────────────────────────────────────────────────────────────────────────
 #  Module-level singletons (cached after first load)
 # ─────────────────────────────────────────────────────────────────────────────
-_embedding_model: Optional[OllamaEmbeddings] = None  # Ollama embed client
+_embedding_model: Optional[GoogleGenerativeAIEmbeddings] = None  # Google embed client
 _chroma_client: Optional[chromadb.ClientAPI] = None  # Chroma persistent client
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  ChromaDB Custom Embedding Function (wraps Ollama API)
+#  ChromaDB Custom Embedding Function (wraps Google API)
 # ─────────────────────────────────────────────────────────────────────────────
-class OllamaEmbeddingFunction(EmbeddingFunction):
+class GeminiEmbeddingFunction(EmbeddingFunction):
     """
-    Custom ChromaDB embedding function backed by local Ollama nomic-embed-text.
+    Custom ChromaDB embedding function backed by Google Gemini text-embedding-004.
     """
 
     def __call__(self, input: list[str]) -> Embeddings:
         """
-        Embed a batch of texts using the Ollama nomic-embed-text model.
+        Embed a batch of texts using the Gemini model.
         """
         model = get_embedding_model()
         vectors = model.embed_documents(input)
@@ -62,14 +62,11 @@ class OllamaEmbeddingFunction(EmbeddingFunction):
 #  Function 1: get_embedding_model
 # ─────────────────────────────────────────────────────────────────────────────
 def get_embedding_model():
-    # nomic-embed-text runs locally via Ollama
-    # Tiny 274MB model - very light on laptop
-    # No API key needed, no rate limits
-    return OllamaEmbeddings(
-        model=os.getenv("OLLAMA_EMBED_MODEL",
-                        "nomic-embed-text"),
-        base_url=os.getenv("OLLAMA_BASE_URL",
-                           "http://localhost:11434")
+    # Gemini embeddings run in the cloud, perfect for Render deployments.
+    # Requires GEMINI_API_KEY environment variable.
+    return GoogleGenerativeAIEmbeddings(
+        model="models/text-embedding-004",
+        google_api_key=os.getenv("GEMINI_API_KEY", "")
     )
 
 
@@ -133,7 +130,7 @@ def get_or_create_collection(name: str) -> chromadb.Collection:
     # it simply returns the existing one with the same settings.
     collection = client.get_or_create_collection(
         name=name,
-        embedding_function=OllamaEmbeddingFunction(),   # plug Ollama in as the embedder
+        embedding_function=GeminiEmbeddingFunction(),   # plug Gemini in as the embedder
         metadata={"hnsw:space": "cosine"},              # use cosine distance metric
     )
 
