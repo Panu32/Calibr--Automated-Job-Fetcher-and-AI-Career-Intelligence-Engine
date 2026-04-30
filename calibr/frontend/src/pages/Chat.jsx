@@ -109,12 +109,14 @@ export default function Chat() {
         
         while (charQueue.length > 0 || !isStreamDone) {
           if (charQueue.length > 0) {
-            const batchSize = Math.max(1, Math.floor(charQueue.length / 10));
+            // Adaptive batch size: render faster if backend dumps text instantly, 
+            // but keep it smooth
+            const batchSize = charQueue.length > 300 ? 8 : (charQueue.length > 100 ? 4 : 2);
             const chars = charQueue.splice(0, batchSize).join("");
             appendLastChatMessage(chars);
             
-            const delay = charQueue.length > 20 ? 1 : 5;
-            await new Promise(r => setTimeout(r, delay));
+            // Fast 10ms delay for that snappy ChatGPT feel
+            await new Promise(r => setTimeout(r, 10));
           } else {
             await new Promise(r => setTimeout(r, 20));
             if (isStreamDone && charQueue.length === 0) break;
@@ -137,7 +139,13 @@ export default function Chat() {
             setThinkingStatus("");
             isFirstChunk = false;
           }
-          charQueue.push(...chunk.split(""));
+          try {
+            const parsedChunk = JSON.parse(chunk);
+            charQueue.push(...parsedChunk.split(""));
+          } catch (e) {
+            // Fallback for raw text if parsing fails
+            charQueue.push(...chunk.split(""));
+          }
         }
       });
       

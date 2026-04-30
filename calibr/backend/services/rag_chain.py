@@ -113,8 +113,9 @@ async def chat_with_resume_stream(
         }):
             if chunk:
                 full_response_parts.append(chunk)
-                # Escape newlines in chunk for SSE if necessary, though most LLM chunks are fine
-                yield f"data: {chunk}\n\n"
+                import json
+                encoded_chunk = json.dumps(chunk)
+                yield f"data: {encoded_chunk}\n\n"
 
         # ── Step 3: Persistence ───────────────────────────────────────────
         # Save the full exchange to MongoDB once the stream is complete

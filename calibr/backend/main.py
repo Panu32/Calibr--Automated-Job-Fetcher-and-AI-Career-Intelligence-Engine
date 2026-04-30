@@ -150,9 +150,10 @@ app = FastAPI(
 #  to make cross-origin requests to this FastAPI backend.
 #  In production, replace the origin with your actual deployed frontend URL.
 # ─────────────────────────────────────────────────────────────────────────────
+import os
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],    # React/Vite dev server
+    allow_origins=[os.getenv("FRONTEND_URL", "*")], # Allow deployed frontend or wildcard
     allow_credentials=True,                    # allow cookies / auth headers
     allow_methods=["*"],                       # GET, POST, PUT, DELETE, etc.
     allow_headers=["*"],                       # all request headers allowed

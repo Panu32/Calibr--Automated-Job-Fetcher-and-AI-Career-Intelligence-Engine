@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: calibr-backend
+    env: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      # The rest of the variables (GROQ_API_KEY, MONGODB_URL, etc.)
+      # should be added manually in the Render dashboard for security.
