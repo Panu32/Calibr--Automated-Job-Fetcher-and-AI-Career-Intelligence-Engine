@@ -119,7 +119,7 @@ export const loginWithGoogle = async (token) => {
  *
  * @param {string} userId  - The user's identifier
  * @param {File}   file    - The File object from the file input / drop zone
- * @returns {Promise<Object>} { filename, skill_count, extracted_skills, doc_id, message }
+ * @returns {Promise<Object>} { filename, doc_id, message }
  */
 export const uploadResume = async (userId, file) => {
   const formData = new FormData();
@@ -133,54 +133,59 @@ export const uploadResume = async (userId, file) => {
 };
 
 /**
- * Submit a job description text for parsing and storage.
- *
- * @param {string} userId  - The user's identifier
- * @param {string} jdText  - Raw job description text (pasted by user)
- * @returns {Promise<Object>} { parsed_skills, skill_count, message }
- */
-export const uploadJD = async (userId, jdText) => {
-  const response = await api.post("/resume/jd", {
-    user_id: userId,
-    jd_text: jdText,
-  });
-  return response.data;
-};
-
-/**
  * Fetch resume metadata for a user.
  *
  * @param {string} userId
- * @returns {Promise<Object>} { user_id, filename, skill_count, skills, uploaded_at }
+ * @returns {Promise<Object>} { user_id, filename, uploaded_at }
  */
 export const getResume = async (userId) => {
   const response = await api.get(`/resume/${userId}`);
   return response.data;
 };
 
-
 // ──────────────────────────────────────────────────────────────────────────
-//  ANALYSIS endpoints
+//  INTERVIEW endpoints
 // ──────────────────────────────────────────────────────────────────────────
 
 /**
- * Run a skill gap analysis for a user against a job description.
- *
- * jdText is optional — if not provided, the backend uses the JD
- * previously saved via uploadJD().
- *
- * @param {string}      userId  - The user's identifier
- * @param {string|null} jdText  - Job description text (or null to use saved JD)
- * @returns {Promise<Object>} SkillGapResponse with has_skills, missing_skills, etc.
+ * Start a new AI interview session for a given job.
+ * @param {string} userId
+ * @param {Object} job - { job_title, job_company, job_description, url }
+ * @returns {Promise<Object>} { session_id, question, phase, phase_label, ... }
  */
-export const analyzeSkillGap = async (userId, jdText = null) => {
-  const response = await api.post("/analysis/skill-gap", {
-    user_id: userId,
-    jd_text: jdText,   // null is valid — backend falls back to saved JD
+export const startInterview = async (userId, job) => {
+  const response = await api.post("/interview/start", {
+    user_id:         userId,
+    job_title:       job.title       || "Software Engineer",
+    job_company:     job.company     || "Unknown Company",
+    job_description: job.description || "",
+    job_url:         job.url         || "",
   });
   return response.data;
 };
 
+/**
+ * Submit the user's answer to the current question.
+ * @param {string} sessionId
+ * @param {string} answer
+ * @returns {Promise<Object>} { question, evaluation_score, evaluation_feedback, ... }
+ */
+export const submitInterviewAnswer = async (sessionId, answer) => {
+  const response = await api.post("/interview/answer", {
+    session_id: sessionId,
+    answer,
+  });
+  return response.data;
+};
+
+/**
+ * Fetch current session state (for page refresh recovery).
+ * @param {string} sessionId
+ */
+export const getInterviewSession = async (sessionId) => {
+  const response = await api.get(`/interview/session/${sessionId}`);
+  return response.data;
+};
 
 // ──────────────────────────────────────────────────────────────────────────
 //  JOBS endpoints

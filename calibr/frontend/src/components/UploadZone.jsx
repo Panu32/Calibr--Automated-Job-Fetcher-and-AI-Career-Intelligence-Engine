@@ -96,9 +96,9 @@ export default function UploadZone({ onFileSelect, isLoading = false }) {
               className="relative"
             >
                <div className="absolute inset-0 bg-indigo-500/30 blur-3xl rounded-full animate-pulse" />
-               <div className="w-24 h-24 rounded-[32px] glass-panel border border-indigo-500/20 flex items-center justify-center relative z-10">
-                 <Loader2 size={40} className="text-indigo-400 animate-spin" />
-               </div>
+                <div className="w-20 h-20 rounded-[28px] glass-panel border border-indigo-500/20 flex items-center justify-center relative z-10">
+                  <Loader2 size={32} className="text-indigo-400 animate-spin" />
+                </div>
             </motion.div>
           ) : (
             <motion.div 
@@ -109,9 +109,9 @@ export default function UploadZone({ onFileSelect, isLoading = false }) {
               className="relative"
             >
                <div className="absolute inset-0 bg-indigo-500/15 blur-2xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
-               <div className="w-24 h-24 rounded-[32px] bg-slate-900 border border-white/[0.08] flex items-center justify-center relative z-10 transition-all duration-500 group-hover:-translate-y-2 group-hover:border-indigo-500/40 group-hover:shadow-2xl group-hover:shadow-indigo-500/20">
-                 <UploadCloud size={40} className="text-slate-600 group-hover:text-indigo-400 transition-colors" />
-               </div>
+                <div className="w-20 h-20 rounded-[28px] bg-slate-900 border border-white/[0.08] flex items-center justify-center relative z-10 transition-all duration-500 group-hover:-translate-y-2 group-hover:border-indigo-500/40 group-hover:shadow-2xl group-hover:shadow-indigo-500/20">
+                  <UploadCloud size={32} className="text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                </div>
             </motion.div>
           )}
         </AnimatePresence>

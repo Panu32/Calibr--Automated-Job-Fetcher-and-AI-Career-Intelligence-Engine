@@ -213,10 +213,10 @@ export default function Chat() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl mt-8">
                   {[
-                    "What skills are trending in my stack?",
-                    "Identify top 3 gaps for Senior roles",
-                    "Summarize market opportunities",
-                    "Generate a learning roadmap",
+                    "How is the market for my role trending?",
+                    "What is my strategic fit for senior roles?",
+                    "Summarize high-level market intelligence",
+                    "Analyze my career trajectory",
                   ].map((prompt, i) => (
                     <button
                       key={prompt}

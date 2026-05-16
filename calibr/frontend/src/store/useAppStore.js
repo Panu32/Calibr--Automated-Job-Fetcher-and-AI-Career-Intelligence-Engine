@@ -21,10 +21,12 @@ export const useAppStore = create((set, get) => ({
   user  : JSON.parse(localStorage.getItem("calibr_user")) || null,
   token : localStorage.getItem("calibr_token") || null,
 
-  // ── Resume & JD data ─────────────────────────────────────────────────────
+  // ── Resume data ───────────────────────────────────────────────────────────
   resumeData: null,
-  jdData: null,
-  skillGapResult: null,
+
+  // ── Interview state ───────────────────────────────────────────────────────
+  selectedJob:      null,   // the job card that triggered "Start Interview"
+  interviewSession: null,   // current interview session data
 
   // ── Jobs ─────────────────────────────────────────────────────────────────
   jobs: [],
@@ -62,21 +64,21 @@ export const useAppStore = create((set, get) => ({
       token: null, 
       activeTab: "home",
       resumeData: null,
-      jdData: null,
+      selectedJob: null,
+      interviewSession: null,
       jobs: [],
       chatHistory: [],
-      skillGapResult: null
     });
   },
 
   setResumeData: (data) =>
-    set({ resumeData: data, skillGapResult: null }),
+    set({ resumeData: data }),
 
-  setJdData: (data) =>
-    set({ jdData: data, skillGapResult: null }),
+  setSelectedJob: (job) =>
+    set({ selectedJob: job }),
 
-  setSkillGapResult: (result) =>
-    set({ skillGapResult: result }),
+  setInterviewSession: (session) =>
+    set({ interviewSession: session }),
 
   setJobs: (jobs) =>
     set({ jobs }),
@@ -134,43 +136,30 @@ export const useAppStore = create((set, get) => ({
     set({ error: null }),
 
   /**
-   * Fetch initial resume and JD metadata from the backend.
-   * This ensures state persists across page refreshes.
+   * Fetch initial resume and metadata from the backend.
    */
   fetchInitialData: async () => {
-    const { user, setResumeData, setJdData, setChatHistory } = get();
+    const { user, setResumeData, setChatHistory } = get();
     if (!user) return;
 
     try {
       const userId = user._id || user.id;
       
-      // Fetch Resume & Chat History in parallel for speed
       const [resumeData, chatData] = await Promise.all([
         getResume(userId).catch(() => null),
         getChatHistory(userId).catch(() => ({ messages: [] }))
       ]);
       
-      // Update Resume metadata
       if (resumeData) {
         setResumeData(resumeData);
-        
-        // Update JD data if it exists in the fetched metadata
-        if (resumeData.jd_text) {
-          setJdData({
-            jd_text: resumeData.jd_text,
-            parsed_skills: resumeData.jd_skills || [],
-            skill_count: (resumeData.jd_skills || []).length
-          });
-        }
       }
 
-      // Update Chat History
       if (chatData && chatData.messages) {
         setChatHistory(chatData.messages);
       }
 
     } catch (err) {
-      console.info("Info: No initial data found or connection issue.", err.message);
+      console.info("Info: No initial data found.", err.message);
     }
   },
 }));

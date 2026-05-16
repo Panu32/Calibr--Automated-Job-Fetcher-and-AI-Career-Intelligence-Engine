@@ -33,7 +33,7 @@ from apscheduler.triggers.cron import CronTrigger
 
 # ── Internal: routers ─────────────────────────────────────────────────────────
 # Each router handles a specific feature domain of the API.
-from routers import resume, jobs, analysis, chat, auth, news
+from routers import resume, jobs, chat, auth, news, interview
 
 # ── Internal: database initialisation ─────────────────────────────────────────
 from db.mongodb import connect_to_mongo, close_mongo_connection
@@ -169,9 +169,9 @@ API_PREFIX = "/api/v1"
 app.include_router(auth.router, prefix=f"{API_PREFIX}/auth", tags=["Auth"])
 app.include_router(resume.router, prefix=f"{API_PREFIX}/resume", tags=["Resume"])
 app.include_router(jobs.router, prefix=f"{API_PREFIX}/jobs", tags=["Jobs"])
-app.include_router(analysis.router, prefix=f"{API_PREFIX}/analysis", tags=["Analysis"])
 app.include_router(chat.router, prefix=f"{API_PREFIX}/chat", tags=["Chat"])
 app.include_router(news.router, prefix=f"{API_PREFIX}/news", tags=["Market Intel"])
+app.include_router(interview.router, prefix=f"{API_PREFIX}/interview", tags=["Interview"])
 
 
 # ─────────────────────────────────────────────────────────────────────────────

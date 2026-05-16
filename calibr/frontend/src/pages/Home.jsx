@@ -25,17 +25,9 @@ const FEATURE_CARDS = [
     color      : "indigo"
   },
   {
-    tab        : "resume",
-    title      : "Skill Gap Analysis",
-    description: "Clear mapping of your technical expertise to identify specific areas for professional growth.",
-    icon       : FileText,
-    badge      : "Strategy",
-    color      : "purple"
-  },
-  {
     tab        : "jobs",
     title      : "Personalized Feed",
-    description: "Highly relevant opportunities matched to your unique skills and career objectives.",
+    description: "Highly relevant opportunities matched to your unique professional profile and objectives.",
     icon       : Briefcase,
     badge      : "Matching",
     color      : "emerald"
@@ -53,8 +45,8 @@ function StatCard({ icon: Icon, label, value, delay }) {
       transition={{ delay }}
       className="glass-card p-6 flex items-center gap-5 group"
     >
-      <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-white/[0.02] border border-white/5 group-hover:border-indigo-500/20 transition-all duration-300">
-        <Icon size={20} className="text-slate-400 group-hover:text-indigo-400" />
+      <div className="w-10 h-10 rounded-lg flex items-center justify-center bg-white/[0.02] border border-white/5 group-hover:border-indigo-500/20 transition-all duration-300">
+        <Icon size={16} className="text-slate-400 group-hover:text-indigo-400" />
       </div>
       <div>
         <p className="text-2xl font-semibold tracking-tight text-white leading-none mb-1">{value}</p>
@@ -70,7 +62,6 @@ function StatCard({ icon: Icon, label, value, delay }) {
 export default function Home() {
   const { resumeData, jobs, setActiveTab } = useAppStore();
 
-  const skillCount  = resumeData?.skill_count ?? 0;
   const jobCount    = jobs.length;
   const topScore    = jobs.length > 0
     ? Math.round(Math.max(...jobs.map((j) => j.match_score || 0)))
@@ -157,24 +148,18 @@ export default function Home() {
 
       {/* ── Core Metrics ── */}
       {resumeData && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard
-            icon={Target}
-            label="Verified Skills"
-            value={skillCount}
-            delay={0.1}
-          />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <StatCard
             icon={Briefcase}
             label="Market Match"
             value={jobCount}
-            delay={0.2}
+            delay={0.1}
           />
           <StatCard
             icon={TrendingUp}
             label="Strategic Fit"
             value={`${topScore}%`}
-            delay={0.3}
+            delay={0.2}
           />
         </div>
       )}
@@ -201,8 +186,8 @@ export default function Home() {
                 onClick={() => setActiveTab(card.tab)}
                 className="glass-card p-8 text-left group relative flex flex-col h-full overflow-hidden"
               >
-                <div className="w-12 h-12 rounded-xl bg-white/[0.03] flex items-center justify-center mb-6 border border-white/5 transition-all duration-300 group-hover:border-indigo-500/30">
-                  <Icon size={20} className="text-slate-400 group-hover:text-indigo-400 transition-colors" />
+                <div className="w-10 h-10 rounded-lg bg-white/[0.03] flex items-center justify-center mb-6 border border-white/5 transition-all duration-300 group-hover:border-indigo-500/30">
+                  <Icon size={16} className="text-slate-400 group-hover:text-indigo-400 transition-colors" />
                 </div>
 
                 <span className="text-[9px] font-semibold text-slate-500 uppercase tracking-wider mb-2 group-hover:text-indigo-400/60 transition-colors">

@@ -151,156 +151,43 @@ def extract_text_from_docx(file_bytes: bytes) -> str:
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-#  Function 3: extract_skills_with_gemini
-# ─────────────────────────────────────────────────────────────────────────────
-def extract_skills_with_gemini(text: str) -> list[str]:
-    """
-    Use Google Gemini (gemini-flash-latest) to extract a comprehensive list of
-    skills from resume text.
-
-    Why Gemini instead of regex/keyword matching?
-        - Resumes don't follow a fixed format. A person might write
-          "built REST APIs with FastAPI" — the skill is "FastAPI" but
-          there's no keyword label. Gemini understands context.
-        - Gemini also catches soft skills like "team leadership" that
-          keyword lists miss.
-
-    Process:
-        1. Truncate text to 8000 chars to stay within free-tier token limits.
-        2. Build a prompt instructing Gemini to return a JSON array only.
-        3. Call Gemini and get the response string.
-        4. Strip any markdown code fences (```json ... ```) Gemini sometimes adds.
-        5. Parse the JSON and return the list.
-
-    Args:
-        text: Plain text extracted from the resume.
-
-    Returns:
-        A list of skill strings, e.g. ["Python", "FastAPI", "Docker", "Git"].
-        Returns an empty list if parsing fails (with a warning log).
-    """
-    if not text.strip():
-        logger.warning("extract_skills_with_gemini received empty text — returning []")
-        return []
-
-    try:
-        llm = get_llm()
-
-        # Truncate to avoid hitting free-tier token limits
-        # 8000 chars ≈ ~2000 tokens, well within gemini-flash's context window
-        truncated_text = text[:8000]
-
-        prompt = f"""From the following resume text, extract ALL technical skills, tools, 
-frameworks, programming languages, databases, cloud platforms, and soft skills.
-
-Return ONLY a valid JSON array of strings with no explanation. 
-Example format: ["Python", "FastAPI", "PostgreSQL", "Docker", "Team Leadership"]
-
-Resume Text:
-{truncated_text}"""
-
-        # Send the prompt as a HumanMessage to the chat model
-        response = llm.invoke([HumanMessage(content=prompt)])
-
-        # response.content is the raw string from Gemini
-        raw = response.content.strip()
-
-        # ── Strip markdown code fences if Gemini wraps its answer ──────────
-        # Gemini sometimes returns: ```json\n["Python", ...]\n```
-        # We need to remove those fences before JSON parsing.
-        raw = re.sub(r"^```(?:json)?\s*", "", raw)   # remove opening fence
-        raw = re.sub(r"\s*```$", "", raw)             # remove closing fence
-        raw = raw.strip()
-
-        # ── Parse the JSON array ────────────────────────────────────────────
-        skills = json.loads(raw)
-
-        # Ensure it's actually a list of strings (Gemini should comply, but validate)
-        if not isinstance(skills, list):
-            logger.warning("Gemini returned non-list JSON — returning []")
-            return []
-
-        # Filter out any non-string entries and strip whitespace
-        skills = [str(s).strip() for s in skills if s]
-
-        logger.info(f"Gemini extracted {len(skills)} skills from resume text")
-        return skills
-
-    except json.JSONDecodeError as e:
-        logger.warning(f"Failed to parse Gemini skill JSON: {e} | Raw response: {raw[:200]}")
-        return []  # safe fallback — the resume still gets stored, just without skills
-
-    except Exception as e:
-        logger.error(f"extract_skills_with_gemini failed unexpectedly: {e}")
-        return []
-
-
-# ─────────────────────────────────────────────────────────────────────────────
 #  Function 4: parse_resume  (main entry point for the resume router)
 # ─────────────────────────────────────────────────────────────────────────────
 def parse_resume(file_bytes: bytes, filename: str) -> dict:
     """
-    High-level function that orchestrates the full resume parsing pipeline.
+    High-level function that orchestrates the resume text extraction pipeline.
 
     Steps:
         1. Detect file type from the filename extension (.pdf or .docx).
         2. Call the appropriate extractor to get raw text.
-        3. Call extract_skills_with_gemini() on that text.
-        4. Return a dict suitable for constructing a ResumeData schema.
-
-    This is the only function the resume router needs to import from this module.
+        3. Return a dict with the extracted text.
 
     Args:
         file_bytes: Raw bytes of the uploaded resume file.
-        filename  : Original filename from the upload (e.g. "john_cv.pdf").
-                    Used only to determine file type.
+        filename  : Original filename from the upload.
 
     Returns:
-        A dict with two keys:
+        A dict with the key:
             {
-                "raw_text"        : str,        # full extracted text
-                "extracted_skills": list[str],  # skills parsed by Gemini
+                "raw_text": str  # full extracted text
             }
 
     Raises:
         ValueError: If the file extension is not .pdf or .docx.
     """
-    # Normalise filename to lowercase for safe extension comparison
     name_lower = filename.lower().strip()
 
     logger.info(f"parse_resume called for file: {filename}")
 
-    # ── Step 1: Extract raw text based on file type ─────────────────────────
     if name_lower.endswith(".pdf"):
-        logger.info("Detected PDF — using pypdf extractor")
         raw_text = extract_text_from_pdf(file_bytes)
-
     elif name_lower.endswith(".docx"):
-        logger.info("Detected DOCX — using python-docx extractor")
         raw_text = extract_text_from_docx(file_bytes)
-
     else:
-        # We only support PDF and DOCX for now
-        raise ValueError(
-            f"Unsupported file type: '{filename}'. "
-            "Please upload a .pdf or .docx file."
-        )
+        raise ValueError(f"Unsupported file type: '{filename}'")
 
-    # Guard: if extraction returned nothing, log and return early
     if not raw_text:
-        logger.warning(f"No text extracted from '{filename}' — returning empty result")
-        return {"raw_text": "", "extracted_skills": []}
+        logger.warning(f"No text extracted from '{filename}'")
+        return {"raw_text": ""}
 
-    # ── Step 2: Extract skills using Gemini ──────────────────────────────────
-    extracted_skills = extract_skills_with_gemini(raw_text)
-
-    logger.info(
-        f"parse_resume complete for '{filename}' — "
-        f"{len(raw_text)} chars, {len(extracted_skills)} skills"
-    )
-
-    # ── Step 3: Return structured dict for the router ─────────────────────────
-    return {
-        "raw_text": raw_text,
-        "extracted_skills": extracted_skills,
-    }
+    return {"raw_text": raw_text}

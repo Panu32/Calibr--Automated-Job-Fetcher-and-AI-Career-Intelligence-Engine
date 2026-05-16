@@ -9,19 +9,21 @@ import { useAppStore } from "./store/useAppStore";
 import Sidebar from "./components/Sidebar";
 
 // ── Page components ────────────────────────────────────────────────────────
-import Home   from "./pages/Home";
-import Chat   from "./pages/Chat";
-import Resume from "./pages/Resume";
-import Jobs   from "./pages/Jobs";
-import Login  from "./pages/Login";
-import Signup from "./pages/Signup";
+import Home      from "./pages/Home";
+import Chat      from "./pages/Chat";
+import Resume    from "./pages/Resume";
+import Jobs      from "./pages/Jobs";
+import Interview from "./pages/Interview";
+import Login     from "./pages/Login";
+import Signup    from "./pages/Signup";
 
 // ── Page registry ──────────────────────────────────────────────────────────
 const PAGES = {
-  home  : Home,
-  chat  : Chat,
-  resume: Resume,
-  jobs  : Jobs,
+  home     : Home,
+  chat     : Chat,
+  resume   : Resume,
+  jobs     : Jobs,
+  interview: Interview,
 };
 
 /**
@@ -43,11 +45,12 @@ export default function App() {
   // Determine page title/metadata for the header
   const pageMeta = useMemo(() => {
     switch(activeTab) {
-      case 'home':   return { title: 'Dashboard', subtitle: 'Global Overview' };
-      case 'chat':   return { title: 'AI Career Assistant', subtitle: 'Intelligence Engine' };
-      case 'resume': return { title: 'Skill Gap Intelligence', subtitle: 'Profile Strategy' };
-      case 'jobs':   return { title: 'Opportunities', subtitle: 'Semantic Matching' };
-      default:       return { title: 'Calibr', subtitle: 'Intelligence' };
+      case 'home':      return { title: 'Dashboard',           subtitle: 'Global Overview' };
+      case 'chat':      return { title: 'AI Career Assistant',  subtitle: 'Intelligence Engine' };
+      case 'resume':    return { title: 'Professional Profile', subtitle: 'Identity Sync' };
+      case 'jobs':      return { title: 'Opportunities',        subtitle: 'Semantic Matching' };
+      case 'interview': return { title: 'AI Interview',         subtitle: 'Live Session' };
+      default:          return { title: 'Calibr',               subtitle: 'Intelligence' };
     }
   }, [activeTab]);
 

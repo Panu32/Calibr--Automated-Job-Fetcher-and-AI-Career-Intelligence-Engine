@@ -53,12 +53,17 @@ function SkeletonCard() {
  * Jobs Feed - The Market Intelligence Deck
  */
 export default function Jobs() {
-  const { user, jobs, setJobs, setError, resumeData } = useAppStore();
+  const { user, jobs, setJobs, setError, resumeData, setSelectedJob, setActiveTab } = useAppStore();
   const userId = user?._id || user?.id;
 
   const [loading,         setLoading]         = useState(false);
   const [refreshLoading,  setRefreshLoading]  = useState(false);
   const [activeFilter,    setActiveFilter]    = useState("all");
+
+  const handleStartInterview = (job) => {
+    setSelectedJob(job);
+    setActiveTab("interview");
+  };
 
   useEffect(() => {
     if (!resumeData) return;
@@ -258,7 +263,7 @@ export default function Jobs() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
               >
-                <JobCard job={job} />
+                <JobCard job={job} onStartInterview={handleStartInterview} />
               </motion.div>
             ))}
           </motion.section>

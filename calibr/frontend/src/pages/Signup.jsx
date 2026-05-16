@@ -76,7 +76,7 @@ export default function Signup({ onToggleMode }) {
             whileHover={{ scale: 1.05 }}
             className="inline-flex items-center justify-center mb-8"
           >
-            <img src={logo} alt="CalibrAI" className="w-48 h-auto object-contain" />
+            <img src={logo} alt="CalibrAI" className="w-24 h-auto object-contain" />
           </motion.div>
           <p className="text-slate-400 font-medium tracking-tight text-lg">
             Start your elite career journey today.

@@ -8,6 +8,7 @@ import {
   User,
   LogOut,
   Sparkles,
+  Brain,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useAppStore } from "../store/useAppStore";
@@ -21,10 +22,16 @@ const NAV_SECTIONS = [
     ],
   },
   {
-    label: "Analysis",
+    label: "Strategic",
     items: [
-      { id: "resume", label: "Skills", icon: FileText },
+      { id: "resume", label: "Profile",       icon: User     },
       { id: "jobs",   label: "Opportunities", icon: Briefcase },
+    ],
+  },
+  {
+    label: "Tools",
+    items: [
+      { id: "interview", label: "Interview", icon: Brain },
     ],
   },
 ];
@@ -54,7 +61,7 @@ export default function Sidebar() {
         <img 
           src={logo} 
           alt="CalibrAI" 
-          className="w-10 h-10 md:w-40 md:h-auto object-contain"
+          className="w-8 h-8 md:w-20 md:h-auto object-contain"
         />
       </div>
 
@@ -82,7 +89,8 @@ export default function Sidebar() {
                     ].join(" ")}
                   >
                     <Icon
-                      size={18}
+                      size={14}
+                      strokeWidth={1.5}
                       className={isActive ? "text-indigo-400" : "group-hover:text-slate-400 transition-colors"}
                     />
                     <span className="hidden md:block font-medium tracking-tight text-[13.5px]">{item.label}</span>

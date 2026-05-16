@@ -6,6 +6,7 @@ import {
   ExternalLink,
   Calendar,
   Layers,
+  Brain,
 } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -25,7 +26,7 @@ function getMatchBadgeStyle(score) {
 /**
  * Job Listing Entry - Semantic Detail View
  */
-export default function JobCard({ job }) {
+export default function JobCard({ job, onStartInterview }) {
   const {
     title       = "Executive Position",
     company     = "Confidential Organisation",
@@ -106,22 +107,32 @@ export default function JobCard({ job }) {
         </div>
       </div>
 
-      {/* ── Action ── */}
-      <a
-        href={url || "#"}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={[
-          "mt-6 flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg",
-          "text-[12px] font-semibold uppercase tracking-wider transition-all duration-200",
-          url 
-            ? "bg-white/[0.03] text-slate-300 border border-white/10 hover:bg-white hover:text-slate-950 hover:border-white shadow-sm"
-            : "opacity-20 cursor-not-allowed bg-slate-900 text-slate-600",
-        ].join(" ")}
-      >
-        <span>View Details</span>
-        <ExternalLink size={13} />
-      </a>
+      {/* ── Action Buttons ── */}
+      <div className="mt-6 flex flex-col gap-2">
+        <a
+          href={url || "#"}
+          target="_blank"
+          rel="noopener noreferrer"
+          className={[
+            "flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg",
+            "text-[12px] font-semibold uppercase tracking-wider transition-all duration-200",
+            url
+              ? "bg-white/[0.03] text-slate-300 border border-white/10 hover:bg-white hover:text-slate-950 hover:border-white shadow-sm"
+              : "opacity-20 cursor-not-allowed bg-slate-900 text-slate-600",
+          ].join(" ")}
+        >
+          <span>View Details</span>
+          <ExternalLink size={13} />
+        </a>
+
+        <button
+          onClick={() => onStartInterview && onStartInterview(job)}
+          className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-lg text-[12px] font-semibold uppercase tracking-wider transition-all duration-200 bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-500 hover:to-purple-500 shadow-lg shadow-indigo-600/20 hover:shadow-indigo-500/30"
+        >
+          <Brain size={13} />
+          <span>Start Interview</span>
+        </button>
+      </div>
     </motion.article>
   );
 }
